@@ -48,7 +48,7 @@ export function AuditTable({ events, showEntity = true }: { events: AuditEvent[]
           <span className="text-slate-400">—</span>
         ),
     },
-    { key: "reason", header: "Why", render: (e) => <span className="text-slate-700">{e.reason ?? "—"}</span>, className: "min-w-64 w-full" },
+    { key: "reason", header: "Why", render: (e) => <span className="text-slate-700">{e.reason ?? "—"}</span>, className: "min-w-48" },
   ];
   return <DataTable columns={columns} rows={events} emptyMessage="No audit events yet." />;
 }
