@@ -72,7 +72,15 @@ count prisma/schema.prisma prisma/seed.ts                                       
 - The shared share rose from the earlier 66% measurement because the EN/KR localization layer (`8687490`, `e38e94e`) landed almost entirely in `src/lib` and `src/components`.
 
 
-Line counts are architectural evidence that subsequent review-style modules can reuse substantial infrastructure. They are not translated directly into engineering hours or cost savings.
+**What the reuse evidence is.** Both modules landed in the same initial commit (`f2400b2` adds `src/modules/kyc/*` and `src/modules/refunds/*` together; `git show --stat --name-only f2400b2 | grep -E 'modules/(kyc|refunds)'`). There is no commit in which KYC exists and Refund is then added, so the repository does not show a sequential "build the second module on the first" event. The reuse evidence is architectural, taken from the shape of the code at `HEAD`, not an observed build sequence.
+
+What the code does show:
+
+- The Refund module's own code is three files (`module.ts`, `actions.ts`, `queries.ts`) plus two pages, 202 non-blank lines in total.
+- `refundModule` implements only the shared `CaseModule` interface. Its server action calls the shared `handleCaseActionForm()` / `executeCaseAction()`, inside which `authorize()` and `recordAudit()` run; its pages use the shared `DataTable`, `FilterBar`, `CaseDetail`, `ActionPanel`, `StatusBadge`, and `AccessDenied` components unchanged.
+- The whole value-tier approval rule is one expression in `requiredPermission()`: `isHighValue(r) ? "refund:approve_high_value" : "refund:approve"`.
+
+Line counts are architectural evidence that review-style modules can be expressed as a small policy against the shared foundation. They are not translated directly into engineering hours or cost savings.
 
 ## 4. Engineering Leverage
 
@@ -83,7 +91,13 @@ Line counts are architectural evidence that subsequent review-style modules can 
 - If shared foundations and Devin-assisted implementation reduce marginal effort, portfolio growth does not need to produce proportional growth in engineering effort.
 - Capacity created through reuse can be redirected toward core fintech product development, reliability, security, integrations, and customer-facing systems.
 
-The PoC demonstrates this pattern for a second module. It has not been validated at production scale or across the full future portfolio.
+Observed limit: cross-cutting concerns are not fully absorbed by the shared foundation. The EN/KR localization commit (`8687490`) changed the shared layer and also both module files (`src/modules/kyc/module.ts` +4/-4, `src/modules/refunds/module.ts` +4/-4; `git show --stat 8687490 | grep -E 'modules/|lib/i18n'`) because the `CaseModule.policyNote()` contract gained a translator parameter. A foundation-level change that alters a shared interface touches every module, which counts against the marginal-hours metric as the portfolio grows.
+
+Observed evidence for the audit guarantee: the final smoke check asserts that every successful action in the run produced exactly one audit row (`Every successful action produced exactly one audit row — 5 new rows`), so the one-row-per-action invariant is tested, not only described.
+
+Observed iteration sequence: implement -> browser test -> defect found (per-case audit tables clipped the reason column) -> fix (`5975faa`) -> re-test in the browser. This is one observation of Devin-assisted test-and-fix iteration, not a defect-rate measurement.
+
+The PoC demonstrates this pattern for a second module in the architectural sense above. It has not been validated at production scale or across the full future portfolio.
 
 ## 5. Cost and Effort Sensitivity
 
@@ -173,7 +187,8 @@ The table records the available evidence on each side; it does not score or rank
 ## 7. Decision Interpretation
 
 - The PoC demonstrates that a reusable, code-owned internal-tool foundation with server-side authorization and transactional audit is technically viable.
-- The second workflow reused substantial infrastructure, supporting the hypothesis that marginal effort can decrease across similar workflows.
+- The Refund module is expressed as about 200 lines of policy, queries, and page declarations against the shared foundation, which supports the hypothesis that marginal effort can decrease across similar workflows. This is architectural evidence; the two modules were not built sequentially.
+
 - The economic value is best evaluated through engineering leverage and portfolio scalability.
 - The PoC does not establish lower production TCO than Power Apps.
 - The decision depends primarily on actual marginal engineering hours, maintenance burden, integration complexity, and how Power Apps costs scale as the portfolio expands.
