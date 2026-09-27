@@ -34,7 +34,7 @@ The central question is how much incremental engineering capacity each additiona
 | Shared workflow foundation | Implemented | Shared status model, transition rules, and `CaseModule` contract |
 | Shared UI / shell | Implemented | Shell, navigation, role switcher, tables, filters, detail layout, action panel, audit table |
 | Persistence | Implemented | Prisma on SQLite with deterministic seed |
-| Smoke testing | Implemented | 18 engine-level checks via `npm run smoke` |
+| Smoke testing | Implemented | 16 engine-level checks via `npm run smoke` (count: `npm run smoke \| grep -c '^PASS'`) |
 | Browser validation | Implemented | Flows A–E exercised; one table-clipping defect found and fixed in `5975faa` |
 | Entra ID | Not implemented | Provider stub only; demo cookie identity |
 | External financial integrations | Not implemented | Synthetic data only |
@@ -46,19 +46,31 @@ Session evidence: the first working commit was pushed about an hour after the br
 
 ## 3. Reuse Evidence
 
-Counting method: non-blank lines in `*.ts`, `*.tsx`, `*.css`, and `*.prisma` under `src/` and `prisma/` at commit `52de7e7` using `rg -c '\S'`. Comments are included and generated files are excluded.
+Counting method: non-blank lines (blank lines excluded, comments included) in `*.ts`, `*.tsx`, and `*.css` files under `src/` at commit `e38e94e`, counted with `grep -c '[^[:space:]]'` per file and summed. `prisma/` (`schema.prisma`, `seed.ts`) is reported separately and is not part of the `src/` total. `src/lib/demo/seed.ts` is counted under Other, not Shared foundation. The four category rows sum to the total.
 
-| Code area | Approx. lines | Interpretation |
+```bash
+count() { t=0; for f in "$@"; do [ -f "$f" ] && t=$((t+$(grep -c '[^[:space:]]' "$f"))); done; echo $t; }
+count $(find src/components src/lib -type f \( -name '*.ts' -o -name '*.tsx' \) ! -path 'src/lib/demo/*')   # shared
+count $(find src/modules/kyc src/app/kyc -type f)                                                            # KYC
+count $(find src/modules/refunds src/app/refunds -type f)                                                    # Refund
+count src/app/page.tsx src/app/layout.tsx src/app/globals.css src/app/audit/page.tsx \
+      src/app/admin/page.tsx src/app/admin/actions.ts src/app/admin/ResetButton.tsx src/lib/demo/seed.ts   # other
+count prisma/schema.prisma prisma/seed.ts                                                                    # prisma/
+```
+
+| Code area | Non-blank lines | Interpretation |
 |---|---:|---|
-| Shared foundation | 1,330 | Auth abstraction, authorization, workflow engine, audit, shell, shared UI |
-| KYC-specific | 158 | Policy, server action, queries, two pages |
-| Refund-specific | 196 | Policy, threshold logic, server action, queries, two pages |
-| Other | 422 | Overview, audit page, admin, seed data, schema |
-| Total `src/` | 2,026 | Reference |
+| Shared foundation | 1,828 | Auth abstraction, authorization, workflow engine, audit, i18n, shell, shared UI |
+| KYC-specific | 164 | Policy, server action, queries, two pages |
+| Refund-specific | 202 | Policy, threshold logic, server action, queries, two pages |
+| Other | 355 | Overview, layout, global CSS, audit page, admin, seed data |
+| Total `src/` | 2,549 | Denominator for the percentages below |
+| `prisma/` (separate) | 80 | Schema and seed entry point; not in the `src/` total |
 
-- Shared foundation is about 66% of `src/`.
-- KYC + Refund module-specific code is about 17%.
-- Refund reused the existing authorization, workflow engine, audit, UI, shell, filters, notes, and action/reason patterns without modifying those foundations.
+- Shared foundation is about 72% of `src/` (1,828 / 2,549).
+- KYC + Refund module-specific code is about 14% (366 / 2,549).
+- The shared share rose from the earlier 66% measurement because the EN/KR localization layer (`8687490`, `e38e94e`) landed almost entirely in `src/lib` and `src/components`.
+
 
 Line counts are architectural evidence that subsequent review-style modules can reuse substantial infrastructure. They are not translated directly into engineering hours or cost savings.
 
