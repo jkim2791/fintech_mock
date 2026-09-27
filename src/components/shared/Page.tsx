@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { LockIcon } from "./Icons";
+import { getT } from "@/lib/i18n";
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   return (
@@ -39,16 +40,18 @@ export function Card({ title, meta, children, className = "" }: { title?: string
   );
 }
 
-export function AccessDenied({ required }: { required: string }) {
+export async function AccessDenied({ required }: { required: string }) {
+  const t = await getT();
   return (
     <div className="mx-auto mt-16 max-w-md rounded-md border border-slate-200 bg-white p-6 text-center">
       <div className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-500">
         <LockIcon size={16} />
       </div>
-      <h1 className="mt-3 text-sm font-semibold text-slate-900">Access denied</h1>
+      <h1 className="mt-3 text-sm font-semibold text-slate-900">{t("denied.title")}</h1>
       <p className="mt-1 text-sm leading-relaxed text-slate-500">
-        Your role does not hold <code className="rounded bg-slate-100 px-1 font-mono text-xs text-slate-700">{required}</code>. This check runs on
-        the server, not in the browser.
+        {t("denied.before")}
+        <code className="rounded bg-slate-100 px-1 font-mono text-xs text-slate-700">{required}</code>
+        {t("denied.after")}
       </p>
     </div>
   );

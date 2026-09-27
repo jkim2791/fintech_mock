@@ -1,0 +1,363 @@
+export const LOCALES = ["en", "ko"] as const;
+export type Locale = (typeof LOCALES)[number];
+export const DEFAULT_LOCALE: Locale = "en";
+
+export function isLocale(v: string): v is Locale {
+  return (LOCALES as readonly string[]).includes(v);
+}
+
+/**
+ * UI strings. Identifiers that operators read as codes (role names, permission
+ * strings, statuses in audit rows, KYC, KRW) are intentionally left in English
+ * in the Korean dictionary.
+ */
+const en = {
+  // Shell
+  "app.name": "Ops Portal",
+  "app.tagline": "Internal operations",
+  "nav.overview": "Overview",
+  "nav.kyc": "KYC Review",
+  "nav.refunds": "Refund Operations",
+  "nav.audit": "Audit Log",
+  "nav.admin": "Administration",
+  "nav.group.modules": "Modules",
+  "nav.group.governance": "Governance",
+  "shell.footer": "Synthetic data only. Authorization is enforced server-side; the interface only reflects it.",
+  "shell.demoActAs": "Demo · act as",
+  "shell.switchUser": "Switch demo user",
+  "shell.language": "Language",
+  "role.short.OPS_ANALYST": "Analyst",
+  "role.short.COMPLIANCE_APPROVER": "Approver",
+  "role.short.ADMIN": "Admin",
+  "title.OPS_ANALYST": "Operations Analyst",
+  "title.COMPLIANCE_APPROVER": "Compliance Approver",
+  "title.ADMIN": "Platform Administrator",
+
+  // Domain labels
+  "status.PENDING_REVIEW": "Pending review",
+  "status.ESCALATED": "Escalated",
+  "status.APPROVED": "Approved",
+  "status.REJECTED": "Rejected",
+  "risk.LOW": "Low",
+  "risk.MEDIUM": "Medium",
+  "risk.HIGH": "High",
+  "risk.badge.LOW": "low risk",
+  "risk.badge.MEDIUM": "medium risk",
+  "risk.badge.HIGH": "high risk",
+  "entity.KYC_CASE": "KYC case",
+  "entity.REFUND": "Refund",
+  "entity.SYSTEM": "System",
+  "action.NOTE": "Add note",
+  "action.ESCALATE": "Escalate",
+  "action.APPROVE": "Approve",
+  "action.REJECT": "Reject",
+
+  // Common
+  "common.all": "All",
+  "common.clear": "Clear",
+  "common.required": "Required",
+  "common.cancel": "Cancel",
+  "common.submitting": "Submitting…",
+  "common.masked": "masked",
+  "common.details": "Details",
+  "common.noRecords": "No records match the current filters.",
+  "common.count.cases": "{n} cases",
+  "common.count.case": "{n} case",
+  "common.count.refunds": "{n} refunds",
+  "common.count.refund": "{n} refund",
+  "common.count.events": "{n} events",
+  "common.count.event": "{n} event",
+  "filter.status": "Status",
+  "filter.risk": "Risk",
+  "filter.module": "Module",
+  "filter.action": "Action",
+  "filter.actor": "Actor",
+
+  // Access denied
+  "denied.title": "Access denied",
+  "denied.before": "Your role does not hold ",
+  "denied.after": ". This check runs on the server, not in the browser.",
+
+  // Overview
+  "overview.title": "Overview",
+  "overview.description": "Two internal tools — KYC Review and Refund Operations — built on one shared foundation: shell, authentication, authorization, workflow engine and audit.",
+  "overview.kycSubtitle": "Customer identity verification",
+  "overview.refundSubtitle": "Refund request approvals",
+  "overview.openQueue": "Open queue",
+  "overview.awaiting": "awaiting a decision",
+  "overview.permissions": "Your permissions",
+  "overview.permissionsMeta": "{role} · evaluated on the server for every action",
+  "overview.recentAudit": "Recent audit events",
+  "overview.fullAudit": "Full audit log",
+
+  // KYC
+  "kyc.title": "KYC Review",
+  "kyc.description": "Customer identity verification queue. HIGH-risk approvals require a compliance approver.",
+  "kyc.col.case": "Case",
+  "kyc.col.customer": "Customer",
+  "kyc.col.country": "Country",
+  "kyc.col.risk": "Risk",
+  "kyc.col.status": "Status",
+  "kyc.col.reason": "Review reason",
+  "kyc.col.reviewer": "Reviewer",
+  "kyc.col.submitted": "Submitted",
+  "kyc.field.idNumber": "Identification number",
+  "kyc.field.assignedReviewer": "Assigned reviewer",
+  "kyc.policy.highRisk": "HIGH-risk KYC approval requires a compliance approver (maker-checker).",
+
+  // Refunds
+  "refund.title": "Refund Operations",
+  "refund.description": "Refund request queue. Refunds above {amount} require a compliance approver.",
+  "refund.col.refund": "Refund",
+  "refund.col.amount": "Amount",
+  "refund.col.reason": "Reason",
+  "refund.col.requested": "Requested",
+  "refund.approverRequired": "Approver required",
+  "refund.field.transaction": "Transaction",
+  "refund.field.tier": "Approval tier",
+  "refund.tier.high": "High value",
+  "refund.tier.highNote": "· requires COMPLIANCE_APPROVER or ADMIN",
+  "refund.tier.standard": "Standard",
+  "refund.tier.standardNote": "· any reviewer may decide",
+  "refund.field.reason": "Refund reason",
+  "refund.policy.highValue": "Refunds above {amount} require a compliance approver.",
+
+  // Detail / actions
+  "detail.backToQueue": "{entity} queue",
+  "detail.actions": "Actions",
+  "detail.reasonRecorded": "Reason is recorded in the audit log",
+  "detail.caseClosed": "Case is closed",
+  "detail.notAvailable": "Not available in the current status",
+  "detail.requires": "Requires {roles}",
+  "detail.lockedExplanation": "Requires {roles}. Your role does not hold this permission, so the server will reject the request.",
+  "detail.prompt.APPROVE": "Approval rationale",
+  "detail.prompt.REJECT": "Reason for rejection",
+  "detail.prompt.ESCALATE": "Reason for escalation",
+  "detail.prompt.NOTE": "Note for the case file",
+  "detail.placeholder.note": "What should the next reviewer know?",
+  "detail.placeholder.decision": "Why is this the right decision?",
+  "detail.confirm": "Confirm {action}",
+  "detail.notes": "Notes",
+  "detail.noNotes": "No notes yet.",
+  "detail.auditHistory": "Audit history",
+  "detail.auditRestricted": "Audit history is visible to COMPLIANCE_APPROVER and ADMIN.",
+
+  // Engine results
+  "result.notFound": "{entity} {id} not found",
+  "result.denied": "{role} is not permitted to perform '{permission}'. Requires: {roles}.",
+  "result.reasonRequired": "A reason is required for this action.",
+  "result.noteEmpty": "Note cannot be empty.",
+  "result.badTransition": "Cannot {action} a case in status {status}.",
+  "result.noteAdded": "Note added.",
+  "result.transitioned": "{entity} {id} {status}.",
+
+  // Audit
+  "audit.title": "Audit Log",
+  "audit.description": "Append-only record of every privileged workflow action across all modules: who, what, when, on which case, and why.",
+  "audit.col.when": "When",
+  "audit.col.who": "Who",
+  "audit.col.action": "Action",
+  "audit.col.on": "On",
+  "audit.col.change": "Change",
+  "audit.col.why": "Why",
+  "audit.empty": "No audit events yet.",
+
+  // Admin
+  "admin.title": "Administration",
+  "admin.description": "Demo-only administrative functions.",
+  "admin.demoData": "Demo data",
+  "admin.resetExplanation": "Reloads the synthetic dataset and clears notes and audit history. The reset itself is written to the audit log.",
+  "admin.reset": "Reset demo data",
+  "admin.resetting": "Resetting…",
+  "admin.resetDone": "Demo data reset.",
+  "admin.matrix": "Role → permission matrix",
+  "admin.matrixMeta": "Source of truth for every server-side check",
+  "admin.permission": "Permission",
+} as const;
+
+export type MessageKey = keyof typeof en;
+
+const ko: Record<MessageKey, string> = {
+  "app.name": "Ops Portal",
+  "app.tagline": "내부 운영 포털",
+  "nav.overview": "개요",
+  "nav.kyc": "KYC 심사",
+  "nav.refunds": "환불 운영",
+  "nav.audit": "감사 로그",
+  "nav.admin": "관리",
+  "nav.group.modules": "모듈",
+  "nav.group.governance": "거버넌스",
+  "shell.footer": "합성 데이터만 사용합니다. 권한은 서버에서 검증되며, 화면은 그 결과를 반영할 뿐입니다.",
+  "shell.demoActAs": "데모 · 역할 전환",
+  "shell.switchUser": "데모 사용자 전환",
+  "shell.language": "언어",
+  "role.short.OPS_ANALYST": "분석가",
+  "role.short.COMPLIANCE_APPROVER": "승인자",
+  "role.short.ADMIN": "관리자",
+  "title.OPS_ANALYST": "운영 분석가",
+  "title.COMPLIANCE_APPROVER": "컴플라이언스 승인자",
+  "title.ADMIN": "플랫폼 관리자",
+
+  "status.PENDING_REVIEW": "검토 대기",
+  "status.ESCALATED": "에스컬레이션",
+  "status.APPROVED": "승인",
+  "status.REJECTED": "반려",
+  "risk.LOW": "낮음",
+  "risk.MEDIUM": "중간",
+  "risk.HIGH": "높음",
+  "risk.badge.LOW": "저위험",
+  "risk.badge.MEDIUM": "중위험",
+  "risk.badge.HIGH": "고위험",
+  "entity.KYC_CASE": "KYC 케이스",
+  "entity.REFUND": "환불",
+  "entity.SYSTEM": "시스템",
+  "action.NOTE": "메모 추가",
+  "action.ESCALATE": "에스컬레이션",
+  "action.APPROVE": "승인",
+  "action.REJECT": "반려",
+
+  "common.all": "전체",
+  "common.clear": "초기화",
+  "common.required": "필수",
+  "common.cancel": "취소",
+  "common.submitting": "제출 중…",
+  "common.masked": "마스킹",
+  "common.details": "상세 정보",
+  "common.noRecords": "현재 필터에 해당하는 항목이 없습니다.",
+  "common.count.cases": "{n}건",
+  "common.count.case": "{n}건",
+  "common.count.refunds": "{n}건",
+  "common.count.refund": "{n}건",
+  "common.count.events": "{n}건",
+  "common.count.event": "{n}건",
+  "filter.status": "상태",
+  "filter.risk": "위험도",
+  "filter.module": "모듈",
+  "filter.action": "작업",
+  "filter.actor": "수행자",
+
+  "denied.title": "접근 권한 없음",
+  "denied.before": "현재 역할에는 ",
+  "denied.after": " 권한이 없습니다. 이 검사는 브라우저가 아닌 서버에서 수행됩니다.",
+
+  "overview.title": "개요",
+  "overview.description": "KYC 심사와 환불 운영, 두 개의 내부 도구가 하나의 공통 기반(셸, 인증, 권한, 워크플로 엔진, 감사) 위에서 동작합니다.",
+  "overview.kycSubtitle": "고객 신원 확인",
+  "overview.refundSubtitle": "환불 요청 승인",
+  "overview.openQueue": "큐 열기",
+  "overview.awaiting": "건 결정 대기",
+  "overview.permissions": "내 권한",
+  "overview.permissionsMeta": "{role} · 모든 작업은 서버에서 검증됩니다",
+  "overview.recentAudit": "최근 감사 이벤트",
+  "overview.fullAudit": "전체 감사 로그",
+
+  "kyc.title": "KYC 심사",
+  "kyc.description": "고객 신원 확인 심사 큐입니다. HIGH 위험 케이스의 승인에는 컴플라이언스 승인자가 필요합니다.",
+  "kyc.col.case": "케이스",
+  "kyc.col.customer": "고객",
+  "kyc.col.country": "국가",
+  "kyc.col.risk": "위험도",
+  "kyc.col.status": "상태",
+  "kyc.col.reason": "심사 사유",
+  "kyc.col.reviewer": "담당자",
+  "kyc.col.submitted": "접수일",
+  "kyc.field.idNumber": "신분증 번호",
+  "kyc.field.assignedReviewer": "담당 심사자",
+  "kyc.policy.highRisk": "HIGH 위험 KYC 승인에는 컴플라이언스 승인자가 필요합니다 (maker-checker).",
+
+  "refund.title": "환불 운영",
+  "refund.description": "환불 요청 큐입니다. {amount}을 초과하는 환불은 컴플라이언스 승인자의 승인이 필요합니다.",
+  "refund.col.refund": "환불",
+  "refund.col.amount": "금액",
+  "refund.col.reason": "사유",
+  "refund.col.requested": "요청일",
+  "refund.approverRequired": "승인자 필요",
+  "refund.field.transaction": "거래",
+  "refund.field.tier": "승인 단계",
+  "refund.tier.high": "고액",
+  "refund.tier.highNote": "· COMPLIANCE_APPROVER 또는 ADMIN 필요",
+  "refund.tier.standard": "일반",
+  "refund.tier.standardNote": "· 모든 심사자가 결정 가능",
+  "refund.field.reason": "환불 사유",
+  "refund.policy.highValue": "{amount}을 초과하는 환불은 컴플라이언스 승인자의 승인이 필요합니다.",
+
+  "detail.backToQueue": "{entity} 큐",
+  "detail.actions": "작업",
+  "detail.reasonRecorded": "사유는 감사 로그에 기록됩니다",
+  "detail.caseClosed": "종결된 케이스",
+  "detail.notAvailable": "현재 상태에서는 사용할 수 없습니다",
+  "detail.requires": "{roles} 권한 필요",
+  "detail.lockedExplanation": "{roles} 권한이 필요합니다. 현재 역할에는 이 권한이 없어 서버에서 요청이 거부됩니다.",
+  "detail.prompt.APPROVE": "승인 근거",
+  "detail.prompt.REJECT": "반려 사유",
+  "detail.prompt.ESCALATE": "에스컬레이션 사유",
+  "detail.prompt.NOTE": "케이스 메모",
+  "detail.placeholder.note": "다음 심사자가 알아야 할 내용을 적어 주세요.",
+  "detail.placeholder.decision": "이 결정이 적절한 이유를 적어 주세요.",
+  "detail.confirm": "{action} 확정",
+  "detail.notes": "메모",
+  "detail.noNotes": "등록된 메모가 없습니다.",
+  "detail.auditHistory": "감사 이력",
+  "detail.auditRestricted": "감사 이력은 COMPLIANCE_APPROVER와 ADMIN만 볼 수 있습니다.",
+
+  "result.notFound": "{entity} {id}을(를) 찾을 수 없습니다",
+  "result.denied": "{role} 역할은 '{permission}' 권한이 없습니다. 필요 역할: {roles}.",
+  "result.reasonRequired": "이 작업에는 사유가 필요합니다.",
+  "result.noteEmpty": "메모 내용을 입력해 주세요.",
+  "result.badTransition": "{status} 상태의 케이스는 {action} 처리할 수 없습니다.",
+  "result.noteAdded": "메모가 추가되었습니다.",
+  "result.transitioned": "{entity} {id} {status} 처리되었습니다.",
+
+  "audit.title": "감사 로그",
+  "audit.description": "모든 모듈의 권한 작업을 추가 전용으로 기록합니다: 누가, 무엇을, 언제, 어느 케이스에, 왜.",
+  "audit.col.when": "시각",
+  "audit.col.who": "수행자",
+  "audit.col.action": "작업",
+  "audit.col.on": "대상",
+  "audit.col.change": "상태 변경",
+  "audit.col.why": "사유",
+  "audit.empty": "감사 이벤트가 없습니다.",
+
+  "admin.title": "관리",
+  "admin.description": "데모 전용 관리 기능입니다.",
+  "admin.demoData": "데모 데이터",
+  "admin.resetExplanation": "합성 데이터셋을 다시 불러오고 메모와 감사 이력을 초기화합니다. 초기화 작업 자체도 감사 로그에 기록됩니다.",
+  "admin.reset": "데모 데이터 초기화",
+  "admin.resetting": "초기화 중…",
+  "admin.resetDone": "데모 데이터가 초기화되었습니다.",
+  "admin.matrix": "역할 → 권한 매트릭스",
+  "admin.matrixMeta": "모든 서버 측 권한 검사의 기준",
+  "admin.permission": "권한",
+};
+
+export const MESSAGES: Record<Locale, Record<MessageKey, string>> = { en, ko };
+
+export type Params = Record<string, string | number>;
+export type Translator = (key: MessageKey, params?: Params) => string;
+
+export function createTranslator(locale: Locale): Translator {
+  const dict = MESSAGES[locale];
+  return (key, params) => {
+    const template = dict[key] ?? MESSAGES.en[key] ?? key;
+    if (!params) return template;
+    return template.replace(/\{(\w+)\}/g, (_, name: string) => (name in params ? String(params[name]) : `{${name}}`));
+  };
+}
+
+/** Display labels keyed by code, for FilterBar options. */
+export function statusLabels(t: Translator): Record<string, string> {
+  return {
+    PENDING_REVIEW: t("status.PENDING_REVIEW"),
+    ESCALATED: t("status.ESCALATED"),
+    APPROVED: t("status.APPROVED"),
+    REJECTED: t("status.REJECTED"),
+  };
+}
+
+export function riskLabels(t: Translator): Record<string, string> {
+  return { LOW: t("risk.LOW"), MEDIUM: t("risk.MEDIUM"), HIGH: t("risk.HIGH") };
+}
+
+export function count(t: Translator, n: number, singular: MessageKey, plural: MessageKey): string {
+  return t(n === 1 ? singular : plural, { n });
+}

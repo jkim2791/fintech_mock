@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "./SidebarNav";
+import { useT } from "@/lib/i18n/client";
 
 /** Derives "Module / ID" from the current path using the nav labels. */
 export function Breadcrumbs({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
+  const t = useT();
   const root = items
     .filter((i) => i.href !== "/" && pathname.startsWith(i.href))
     .sort((a, b) => b.href.length - a.href.length)[0];
@@ -20,7 +22,7 @@ export function Breadcrumbs({ items }: { items: NavItem[] }) {
             {root.label}
           </Link>
         ) : (
-          <span className="font-medium text-slate-900">Overview</span>
+          <span className="font-medium text-slate-900">{t("nav.overview")}</span>
         )}
       </li>
       {rest.map((seg, i) => (

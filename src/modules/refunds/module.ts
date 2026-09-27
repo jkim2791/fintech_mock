@@ -34,9 +34,9 @@ export const refundModule: CaseModule<RefundCase> = {
         return "refund:reject";
     }
   },
-  policyNote(action, r) {
+  policyNote(action, r, t) {
     if (action === "APPROVE" && isHighValue(r)) {
-      return `Refunds above ${formatMoney(HIGH_VALUE_THRESHOLD_KRW, "KRW")} require a compliance approver.`;
+      return t("refund.policy.highValue", { amount: formatMoney(HIGH_VALUE_THRESHOLD_KRW, "KRW") });
     }
     return null;
   },

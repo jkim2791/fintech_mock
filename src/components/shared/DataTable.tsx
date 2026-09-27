@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { getT } from "@/lib/i18n";
 
 export interface Column<T> {
   key: string;
@@ -9,15 +10,17 @@ export interface Column<T> {
 }
 
 /** Generic read-only table used by every queue / log screen. */
-export function DataTable<T extends { id: string | number }>({
+export async function DataTable<T extends { id: string | number }>({
   columns,
   rows,
-  emptyMessage = "No records match the current filters.",
+  emptyMessage,
 }: {
   columns: Column<T>[];
   rows: T[];
   emptyMessage?: string;
 }) {
+  const t = await getT();
+  const empty = emptyMessage ?? t("common.noRecords");
   return (
     <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
       <table className="w-full text-sm">
@@ -34,7 +37,7 @@ export function DataTable<T extends { id: string | number }>({
           {rows.length === 0 && (
             <tr>
               <td colSpan={columns.length} className="px-4 py-12 text-center text-sm text-slate-500">
-                {emptyMessage}
+                {empty}
               </td>
             </tr>
           )}

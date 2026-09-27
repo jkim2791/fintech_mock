@@ -25,9 +25,9 @@ export const kycModule: CaseModule<KycCase> = {
         return "kyc:reject";
     }
   },
-  policyNote(action, c) {
+  policyNote(action, c, t) {
     if (action === "APPROVE" && c.riskLevel === HIGH_RISK_LEVEL) {
-      return "HIGH-risk KYC approval requires a compliance approver (maker-checker).";
+      return t("kyc.policy.highRisk");
     }
     return null;
   },

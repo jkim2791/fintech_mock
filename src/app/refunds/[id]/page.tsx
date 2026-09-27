@@ -7,6 +7,8 @@ import { CaseDetail } from "@/components/shared/CaseDetail";
 import { AccessDenied } from "@/components/shared/Page";
 import { RiskBadge } from "@/components/shared/StatusBadge";
 import { formatDateTime, formatMoney, maskReference } from "@/lib/format";
+import { getLocale } from "@/lib/i18n";
+import { createTranslator } from "@/lib/i18n/messages";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +16,9 @@ export default async function RefundPage({ params }: { params: Promise<{ id: str
   const user = await requireUser();
   if (!can(user, "refund:view")) return <AccessDenied required="refund:view" />;
   const { id } = await params;
-  const r = await refundModule.load(id);
+  const [r, locale] = await Promise.all([refundModule.load(id), getLocale()]);
   if (!r) notFound();
+  const t = createTranslator(locale);
 
   return (
     <CaseDetail
@@ -25,18 +28,18 @@ export default async function RefundPage({ params }: { params: Promise<{ id: str
       serverAction={refundAction}
       badges={<RiskBadge level={r.riskLevel} />}
       fields={[
-        { label: "Customer", value: r.customerName },
+        { label: t("kyc.col.customer"), value: r.customerName },
         {
-          label: "Transaction",
+          label: t("refund.field.transaction"),
           value: (
             <span>
-              {maskReference(r.transactionId)} <span className="font-sans text-xs text-slate-400">masked</span>
+              {maskReference(r.transactionId)} <span className="font-sans text-xs text-slate-400">{t("common.masked")}</span>
             </span>
           ),
           mono: true,
         },
         {
-          label: "Amount",
+          label: t("refund.col.amount"),
           value: (
             <span className="tabular-nums">
               {formatMoney(r.amount, r.currency)}
@@ -45,19 +48,19 @@ export default async function RefundPage({ params }: { params: Promise<{ id: str
           ),
         },
         {
-          label: "Approval tier",
+          label: t("refund.field.tier"),
           value: isHighValue(r) ? (
             <span>
-              High value <span className="text-slate-500">· requires COMPLIANCE_APPROVER or ADMIN</span>
+              {t("refund.tier.high")} <span className="text-slate-500">{t("refund.tier.highNote")}</span>
             </span>
           ) : (
             <span>
-              Standard <span className="text-slate-500">· any reviewer may decide</span>
+              {t("refund.tier.standard")} <span className="text-slate-500">{t("refund.tier.standardNote")}</span>
             </span>
           ),
         },
-        { label: "Requested", value: formatDateTime(r.requestedAt) },
-        { label: "Refund reason", value: r.reason },
+        { label: t("refund.col.requested"), value: formatDateTime(r.requestedAt, locale) },
+        { label: t("refund.field.reason"), value: r.reason },
       ]}
     />
   );

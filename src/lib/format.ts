@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n/messages";
+
 /** Mask a synthetic Korean RRN-style identifier (YYMMDD-GXXXXXX) → YYMMDD-G******. */
 export function maskIdNumber(value: string): string {
   const [front, back] = value.split("-");
@@ -15,12 +17,18 @@ export function formatMoney(amount: number, currency: string): string {
   return new Intl.NumberFormat("ko-KR", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
 }
 
-export function formatDate(d: Date): string {
-  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(d);
+const DATE_LOCALE: Record<Locale, string> = { en: "en-GB", ko: "ko-KR" };
+
+export function formatDate(d: Date, locale: Locale = "en"): string {
+  return new Intl.DateTimeFormat(DATE_LOCALE[locale], { dateStyle: "medium", timeZone: "Asia/Seoul" }).format(d);
 }
 
-export function formatDateTime(d: Date): string {
-  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Seoul" }).format(d) + " KST";
+function formatTime(d: Date, locale: Locale): string {
+  return new Intl.DateTimeFormat(DATE_LOCALE[locale], { timeStyle: "short", timeZone: "Asia/Seoul" }).format(d);
+}
+
+export function formatDateTime(d: Date, locale: Locale = "en"): string {
+  return `${formatDate(d, locale)}${locale === "ko" ? " " : ", "}${formatTime(d, locale)} KST`;
 }
 
 export function humanize(value: string): string {
@@ -28,8 +36,6 @@ export function humanize(value: string): string {
 }
 
 /** Same as formatDateTime but split into [date, time] for stacked table cells. */
-export function splitDateTime(d: Date): [string, string] {
-  const full = formatDateTime(d);
-  const idx = full.indexOf(", ");
-  return idx === -1 ? [full, ""] : [full.slice(0, idx), full.slice(idx + 2)];
+export function splitDateTime(d: Date, locale: Locale = "en"): [string, string] {
+  return [formatDate(d, locale), `${formatTime(d, locale)} KST`];
 }

@@ -4,29 +4,31 @@ import { ROLES } from "@/lib/auth/types";
 import { AccessDenied, Card, PageHeader } from "@/components/shared/Page";
 import { CheckIcon } from "@/components/shared/Icons";
 import { ResetButton } from "./ResetButton";
+import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const user = await requireUser();
   if (!can(user, "admin:access")) return <AccessDenied required="admin:access" />;
+  const t = await getT();
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Administration" description="Demo-only administrative functions." />
-      <Card title="Demo data">
+      <PageHeader title={t("admin.title")} description={t("admin.description")} />
+      <Card title={t("admin.demoData")}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="max-w-lg text-sm leading-relaxed text-slate-600">
-            Reloads the synthetic dataset and clears notes and audit history. The reset itself is written to the audit log.
+            {t("admin.resetExplanation")}
           </p>
           <ResetButton />
         </div>
       </Card>
-      <Card title="Role → permission matrix" meta="Source of truth for every server-side check">
+      <Card title={t("admin.matrix")} meta={t("admin.matrixMeta")}>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-[11px] font-medium uppercase tracking-wider text-slate-500">
-              <th className="pb-2 font-medium">Permission</th>
+              <th className="pb-2 font-medium">{t("admin.permission")}</th>
               {ROLES.map((r) => (
                 <th key={r} className="pb-2 text-center font-mono text-[11px] normal-case tracking-normal">
                   {r}

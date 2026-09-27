@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { StatusBadge } from "./StatusBadge";
 import { ArrowLeftIcon } from "./Icons";
+import { getT } from "@/lib/i18n";
 
 export interface Field {
   label: string;
@@ -13,7 +14,7 @@ export interface Field {
  * Standard detail layout: header with status, field list on the left,
  * sticky action panel + activity on the right.
  */
-export function DetailPage({
+export async function DetailPage({
   backHref,
   backLabel,
   title,
@@ -34,6 +35,7 @@ export function DetailPage({
   side: ReactNode;
   children?: ReactNode;
 }) {
+  const t = await getT();
   return (
     <div>
       <Link href={backHref} className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900">
@@ -50,7 +52,7 @@ export function DetailPage({
       <div className="mt-6 grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-8">
           <section>
-            <h2 className="mb-1 text-sm font-semibold text-slate-900">Details</h2>
+            <h2 className="mb-1 text-sm font-semibold text-slate-900">{t("common.details")}</h2>
             <dl className="grid grid-cols-1 gap-x-10 sm:grid-cols-2">
               {fields.map((f) => (
                 <div key={f.label} className="border-b border-slate-200/80 py-3">

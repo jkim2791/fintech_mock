@@ -8,7 +8,8 @@ import { PageHeader, SectionHeader } from "@/components/shared/Page";
 import { AuditTable } from "@/components/shared/AuditTable";
 import { ArrowRightIcon, CheckIcon } from "@/components/shared/Icons";
 import { REVIEW_STATUSES } from "@/lib/workflow/types";
-import { humanize } from "@/lib/format";
+import { getT } from "@/lib/i18n";
+import type { MessageKey, Translator } from "@/lib/i18n/messages";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ const STATUS_DOTS: Record<string, string> = {
   REJECTED: "bg-rose-500",
 };
 
-function QueueSummary({ title, description, href, counts }: { title: string; description: string; href: string; counts: Record<string, number> }) {
+function QueueSummary({ title, description, href, counts, t }: { title: string; description: string; href: string; counts: Record<string, number>; t: Translator }) {
   const open = (counts.PENDING_REVIEW ?? 0) + (counts.ESCALATED ?? 0);
   return (
     <section className="rounded-md border border-slate-200 bg-white">
@@ -29,7 +30,7 @@ function QueueSummary({ title, description, href, counts }: { title: string; des
           <p className="text-xs text-slate-500">{description}</p>
         </div>
         <Link href={href} className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 hover:text-slate-900">
-          Open queue
+          {t("overview.openQueue")}
           <ArrowRightIcon size={12} />
         </Link>
       </header>
@@ -39,13 +40,13 @@ function QueueSummary({ title, description, href, counts }: { title: string; des
             <div className="text-xl font-semibold tabular-nums tracking-tight text-slate-900">{counts[s] ?? 0}</div>
             <div className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-slate-500">
               <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOTS[s]}`} />
-              {humanize(s)}
+              {t(`status.${s}` as MessageKey)}
             </div>
           </Link>
         ))}
       </div>
       <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
-        <span className="font-medium tabular-nums text-slate-700">{open}</span> awaiting a decision
+        <span className="font-medium tabular-nums text-slate-700">{open}</span> {t("overview.awaiting")}
       </div>
     </section>
   );
@@ -53,6 +54,7 @@ function QueueSummary({ title, description, href, counts }: { title: string; des
 
 export default async function Overview() {
   const user = await requireUser();
+  const t = await getT();
   const [kyc, refunds, recent] = await Promise.all([
     kycSummary(),
     refundSummary(),
@@ -62,16 +64,16 @@ export default async function Overview() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Overview"
-        description="Two internal tools — KYC Review and Refund Operations — built on one shared foundation: shell, authentication, authorization, workflow engine and audit."
+        title={t("overview.title")}
+        description={t("overview.description")}
       />
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        {can(user, "kyc:view") && <QueueSummary title="KYC Review" description="Customer identity verification" href="/kyc" counts={kyc} />}
-        {can(user, "refund:view") && <QueueSummary title="Refund Operations" description="Refund request approvals" href="/refunds" counts={refunds} />}
+        {can(user, "kyc:view") && <QueueSummary title={t("nav.kyc")} description={t("overview.kycSubtitle")} href="/kyc" counts={kyc} t={t} />}
+        {can(user, "refund:view") && <QueueSummary title={t("nav.refunds")} description={t("overview.refundSubtitle")} href="/refunds" counts={refunds} t={t} />}
       </div>
 
       <section>
-        <SectionHeader title="Your permissions" meta={`${user.role} · evaluated on the server for every action`} />
+        <SectionHeader title={t("overview.permissions")} meta={t("overview.permissionsMeta", { role: user.role })} />
         <ul className="grid grid-cols-2 gap-x-6 rounded-md border border-slate-200 bg-white px-4 py-2 md:grid-cols-3">
           {PERMISSIONS.map((p) => {
             const granted = can(user, p);
@@ -90,10 +92,10 @@ export default async function Overview() {
       {can(user, "audit:view") && (
         <section>
           <SectionHeader
-            title="Recent audit events"
+            title={t("overview.recentAudit")}
             actions={
               <Link href="/audit" className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 hover:text-slate-900">
-                Full audit log
+                {t("overview.fullAudit")}
                 <ArrowRightIcon size={12} />
               </Link>
             }

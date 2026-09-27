@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { humanize } from "@/lib/format";
+import { useT } from "@/lib/i18n/client";
 import { ChevronDownIcon, CloseIcon } from "./Icons";
 
 export interface FilterDef {
@@ -18,6 +19,7 @@ export function FilterBar({ filters, summary }: { filters: FilterDef[]; summary?
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const t = useT();
 
   function update(name: string, value: string) {
     const next = new URLSearchParams(params.toString());
@@ -45,7 +47,7 @@ export function FilterBar({ filters, summary }: { filters: FilterDef[]; summary?
               value={value}
               onChange={(e) => update(f.name, e.target.value)}
             >
-              <option value="">All</option>
+              <option value="">{t("common.all")}</option>
               {f.options.map((o) => (
                 <option key={o} value={o}>
                   {f.labels?.[o] ?? humanize(o)}
@@ -63,7 +65,7 @@ export function FilterBar({ filters, summary }: { filters: FilterDef[]; summary?
           className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-900"
         >
           <CloseIcon size={12} />
-          Clear
+          {t("common.clear")}
         </button>
       )}
       {summary && <div className="ml-auto text-xs tabular-nums text-slate-500">{summary}</div>}

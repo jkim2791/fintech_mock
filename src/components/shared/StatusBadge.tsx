@@ -1,4 +1,5 @@
-import { humanize } from "@/lib/format";
+import { getT } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n/messages";
 
 /* Status: neutral text with a semantic dot — readable in dense tables without
    turning every row into a wall of colour. */
@@ -16,23 +17,25 @@ const RISK_STYLES: Record<string, string> = {
   HIGH: "bg-rose-50 text-rose-700",
 };
 
-export function StatusBadge({ status }: { status: string }) {
+export async function StatusBadge({ status }: { status: string }) {
+  const t = await getT();
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-slate-700">
       <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOTS[status] ?? "bg-slate-400"}`} />
-      {humanize(status)}
+      {t(`status.${status}` as MessageKey)}
     </span>
   );
 }
 
-export function RiskBadge({ level }: { level: string }) {
+export async function RiskBadge({ level }: { level: string }) {
+  const t = await getT();
   return (
     <span
       className={`inline-flex items-center whitespace-nowrap rounded px-1.5 py-px text-[11px] font-medium uppercase tracking-wide ${
         RISK_STYLES[level] ?? RISK_STYLES.LOW
       }`}
     >
-      {level.toLowerCase()} risk
+      {t(`risk.badge.${level}` as MessageKey)}
     </span>
   );
 }

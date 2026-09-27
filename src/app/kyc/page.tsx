@@ -9,13 +9,15 @@ import { AccessDenied, PageHeader } from "@/components/shared/Page";
 import { RiskBadge, StatusBadge } from "@/components/shared/StatusBadge";
 import { REVIEW_STATUSES, RISK_LEVELS } from "@/lib/workflow/types";
 import { formatDate, maskIdNumber } from "@/lib/format";
+import { count, getLocale, riskLabels, statusLabels } from "@/lib/i18n";
+import { createTranslator, type Locale, type Translator } from "@/lib/i18n/messages";
 
 export const dynamic = "force-dynamic";
 
-const columns: Column<KycCase>[] = [
+const columns = (t: Translator, locale: Locale): Column<KycCase>[] => [
   {
     key: "id",
-    header: "Case",
+    header: t("kyc.col.case"),
     render: (c) => (
       <Link href={`/kyc/${c.id}`} className="whitespace-nowrap font-mono text-xs font-medium text-slate-900 hover:underline">
         {c.id}
@@ -24,7 +26,7 @@ const columns: Column<KycCase>[] = [
   },
   {
     key: "customer",
-    header: "Customer",
+    header: t("kyc.col.customer"),
     render: (c) => (
       <div className="leading-tight">
         <div className="whitespace-nowrap text-slate-900">{c.customerName}</div>
@@ -32,31 +34,32 @@ const columns: Column<KycCase>[] = [
       </div>
     ),
   },
-  { key: "country", header: "Country", render: (c) => <span className="font-mono text-xs text-slate-600">{c.country}</span> },
-  { key: "risk", header: "Risk", render: (c) => <RiskBadge level={c.riskLevel} /> },
-  { key: "status", header: "Status", render: (c) => <StatusBadge status={c.status} /> },
-  { key: "reason", header: "Review reason", render: (c) => <span className="block max-w-xs text-[13px] leading-snug text-slate-600">{c.reviewReason}</span> },
-  { key: "reviewer", header: "Reviewer", render: (c) => <span className="whitespace-nowrap text-slate-700">{c.assignedReviewer}</span> },
-  { key: "submitted", header: "Submitted", render: (c) => <span className="whitespace-nowrap text-xs text-slate-500">{formatDate(c.submittedAt)}</span>, align: "right" },
+  { key: "country", header: t("kyc.col.country"), render: (c) => <span className="font-mono text-xs text-slate-600">{c.country}</span> },
+  { key: "risk", header: t("kyc.col.risk"), render: (c) => <RiskBadge level={c.riskLevel} /> },
+  { key: "status", header: t("kyc.col.status"), render: (c) => <StatusBadge status={c.status} /> },
+  { key: "reason", header: t("kyc.col.reason"), render: (c) => <span className="block max-w-xs text-[13px] leading-snug text-slate-600">{c.reviewReason}</span> },
+  { key: "reviewer", header: t("kyc.col.reviewer"), render: (c) => <span className="whitespace-nowrap text-slate-700">{c.assignedReviewer}</span> },
+  { key: "submitted", header: t("kyc.col.submitted"), render: (c) => <span className="whitespace-nowrap text-xs text-slate-500">{formatDate(c.submittedAt, locale)}</span>, align: "right" },
 ];
 
 export default async function KycQueuePage({ searchParams }: { searchParams: Promise<{ status?: string; risk?: string }> }) {
   const user = await requireUser();
   if (!can(user, "kyc:view")) return <AccessDenied required="kyc:view" />;
   const params = await searchParams;
-  const cases = await listKycCases(params);
+  const [cases, locale] = await Promise.all([listKycCases(params), getLocale()]);
+  const t = createTranslator(locale);
 
   return (
     <div className="space-y-5">
-      <PageHeader title="KYC Review" description="Customer identity verification queue. HIGH-risk approvals require a compliance approver." />
+      <PageHeader title={t("kyc.title")} description={t("kyc.description")} />
       <FilterBar
         filters={[
-          { name: "status", label: "Status", options: REVIEW_STATUSES },
-          { name: "risk", label: "Risk", options: RISK_LEVELS },
+          { name: "status", label: t("filter.status"), options: REVIEW_STATUSES, labels: statusLabels(t) },
+          { name: "risk", label: t("filter.risk"), options: RISK_LEVELS, labels: riskLabels(t) },
         ]}
-        summary={`${cases.length} ${cases.length === 1 ? "case" : "cases"}`}
+        summary={count(t, cases.length, "common.count.case", "common.count.cases")}
       />
-      <DataTable columns={columns} rows={cases} />
+      <DataTable columns={columns(t, locale)} rows={cases} />
     </div>
   );
 }

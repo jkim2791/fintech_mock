@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import type { AuthUser } from "@/lib/auth/types";
 import type { Permission } from "@/lib/authz";
 import type { EntityType } from "@/lib/audit";
+import type { MessageKey, Params, Translator } from "@/lib/i18n/messages";
 
 export const REVIEW_STATUSES = ["PENDING_REVIEW", "ESCALATED", "APPROVED", "REJECTED"] as const;
 export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
@@ -38,12 +39,15 @@ export interface CaseModule<T extends { id: string; status: string }> {
   /** Module policy: which permission does this action need for this entity? */
   requiredPermission(action: CaseAction, entity: T): Permission;
   /** Human-readable explanation of the policy, shown next to locked actions. */
-  policyNote(action: CaseAction, entity: T): string | null;
+  policyNote(action: CaseAction, entity: T, t: Translator): string | null;
   updateStatus(tx: Prisma.TransactionClient, id: string, status: ReviewStatus): Promise<void>;
   auditAction(action: CaseAction): string;
 }
 
-export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
+/** `code`/`params` let the UI render the message in the viewer's language; the strings stay as the canonical English form. */
+export type ActionResult =
+  | { ok: true; message: string; code?: MessageKey; params?: Params }
+  | { ok: false; error: string; code?: MessageKey; params?: Params };
 
 export interface ActionRequest {
   entityId: string;

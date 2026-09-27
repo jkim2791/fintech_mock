@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local sqlite
 prisma/dev.db*
+
+# Template only; contains no secrets.
+!.env.example

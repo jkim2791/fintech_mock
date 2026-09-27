@@ -11,6 +11,8 @@ import { DetailPage, type Field } from "./DetailPage";
 import { RoleBadge } from "./StatusBadge";
 import { Card, SectionHeader } from "./Page";
 import { LockIcon } from "./Icons";
+import { count, getLocale } from "@/lib/i18n";
+import { createTranslator } from "@/lib/i18n/messages";
 
 /**
  * Module-agnostic detail screen: field grid + action panel + notes + per-entity
@@ -32,16 +34,18 @@ export async function CaseDetail<T extends { id: string; status: string }>({
   serverAction: (prev: ActionResult | null, formData: FormData) => Promise<ActionResult>;
 }) {
   const canViewAudit = can(user, "audit:view");
+  const locale = await getLocale();
+  const t = createTranslator(locale);
   const [notes, audit] = await Promise.all([
     listNotes(mod.entityType, entity.id),
     canViewAudit ? listAuditEvents({ entityType: mod.entityType, entityId: entity.id }) : Promise.resolve([]),
   ]);
-  const availability = describeActionAvailability(mod, entity, user.role);
+  const availability = describeActionAvailability(mod, entity, user.role, t);
 
   return (
     <DetailPage
       backHref={mod.basePath}
-      backLabel={`${mod.label} queue`}
+      backLabel={t("detail.backToQueue", { entity: t(`entity.${mod.entityType}`) })}
       title={entity.id}
       status={entity.status}
       badges={badges}
@@ -49,9 +53,9 @@ export async function CaseDetail<T extends { id: string; status: string }>({
       side={
         <>
           <ActionPanel key={user.id} entityId={entity.id} availability={availability} serverAction={serverAction} />
-          <Card title="Notes" meta={notes.length}>
+          <Card title={t("detail.notes")} meta={notes.length}>
             {notes.length === 0 ? (
-              <p className="text-sm text-slate-500">No notes yet.</p>
+              <p className="text-sm text-slate-500">{t("detail.noNotes")}</p>
             ) : (
               <ol className="divide-y divide-slate-100">
                 {notes.map((n) => (
@@ -59,7 +63,7 @@ export async function CaseDetail<T extends { id: string; status: string }>({
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
                       <span className="font-medium text-slate-900">{n.authorName}</span>
                       <RoleBadge role={n.authorRole} />
-                      <span className="ml-auto font-mono text-[11px]">{formatDateTime(n.createdAt)}</span>
+                      <span className="ml-auto font-mono text-[11px]">{formatDateTime(n.createdAt, locale)}</span>
                     </div>
                     <p className="mt-1.5 text-[13px] leading-relaxed text-slate-800">{n.body}</p>
                   </li>
@@ -71,13 +75,13 @@ export async function CaseDetail<T extends { id: string; status: string }>({
       }
     >
       <section>
-        <SectionHeader title="Audit history" meta={canViewAudit ? `${audit.length} events` : undefined} />
+        <SectionHeader title={t("detail.auditHistory")} meta={canViewAudit ? count(t, audit.length, "common.count.event", "common.count.events") : undefined} />
         {canViewAudit ? (
           <AuditTable events={audit} showEntity={false} />
         ) : (
           <p className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-500">
             <LockIcon size={13} />
-            Audit history is visible to COMPLIANCE_APPROVER and ADMIN.
+            {t("detail.auditRestricted")}
           </p>
         )}
       </section>

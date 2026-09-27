@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { authorize, AuthorizationError, hasPermission, rolesWithPermission } from "@/lib/authz";
 import type { Role } from "@/lib/auth/types";
+import type { Translator } from "@/lib/i18n/messages";
 import { recordAudit } from "@/lib/audit";
 import {
   ACTIONS_REQUIRING_REASON,
@@ -21,22 +22,31 @@ export async function executeCaseAction<T extends { id: string; status: string }
   req: ActionRequest,
 ): Promise<ActionResult> {
   const entity = await mod.load(req.entityId);
-  if (!entity) return { ok: false, error: `${mod.label} ${req.entityId} not found` };
+  if (!entity) {
+    return { ok: false, error: `${mod.label} ${req.entityId} not found`, code: "result.notFound", params: { entityType: mod.entityType, id: req.entityId } };
+  }
 
   try {
     authorize(req.user, mod.requiredPermission(req.action, entity));
   } catch (e) {
-    if (e instanceof AuthorizationError) return { ok: false, error: e.message };
+    if (e instanceof AuthorizationError) {
+      return {
+        ok: false,
+        error: e.message,
+        code: "result.denied",
+        params: { role: req.user.role, permission: e.permission, roles: rolesWithPermission(e.permission).join(" / ") },
+      };
+    }
     throw e;
   }
 
   const reason = req.reason.trim();
   if (ACTIONS_REQUIRING_REASON.includes(req.action) && reason.length < 3) {
-    return { ok: false, error: "A reason is required for this action." };
+    return { ok: false, error: "A reason is required for this action.", code: "result.reasonRequired" };
   }
 
   if (req.action === "NOTE") {
-    if (reason.length === 0) return { ok: false, error: "Note cannot be empty." };
+    if (reason.length === 0) return { ok: false, error: "Note cannot be empty.", code: "result.noteEmpty" };
     await prisma.$transaction(async (tx) => {
       await tx.caseNote.create({
         data: {
@@ -61,13 +71,13 @@ export async function executeCaseAction<T extends { id: string; status: string }
         tx,
       );
     });
-    return { ok: true, message: "Note added." };
+    return { ok: true, message: "Note added.", code: "result.noteAdded" };
   }
 
   const transition = TRANSITIONS[req.action];
   const current = entity.status as ReviewStatus;
   if (!transition.from.includes(current)) {
-    return { ok: false, error: `Cannot ${req.action.toLowerCase()} a case in status ${current}.` };
+    return { ok: false, error: `Cannot ${req.action.toLowerCase()} a case in status ${current}.`, code: "result.badTransition", params: { action: req.action, status: current } };
   }
 
   await prisma.$transaction(async (tx) => {
@@ -86,7 +96,12 @@ export async function executeCaseAction<T extends { id: string; status: string }
     );
   });
 
-  return { ok: true, message: `${mod.label} ${entity.id} ${transition.to.toLowerCase()}.` };
+  return {
+    ok: true,
+    message: `${mod.label} ${entity.id} ${transition.to.toLowerCase()}.`,
+    code: "result.transitioned",
+    params: { entityType: mod.entityType, id: entity.id, status: transition.to },
+  };
 }
 
 /** Which actions the current user could perform right now (for UI hints only; the engine re-checks). */
@@ -94,6 +109,7 @@ export function describeActionAvailability<T extends { id: string; status: strin
   mod: CaseModule<T>,
   entity: T,
   role: Role,
+  t: Translator,
 ) {
   const status = entity.status as ReviewStatus;
   return (["NOTE", "ESCALATE", "APPROVE", "REJECT"] as const).map((action) => {
@@ -106,7 +122,7 @@ export function describeActionAvailability<T extends { id: string; status: strin
       permitted,
       transitionOk,
       requiredRoles: rolesWithPermission(permission),
-      policyNote: mod.policyNote(action, entity),
+      policyNote: mod.policyNote(action, entity, t),
     };
   });
 }

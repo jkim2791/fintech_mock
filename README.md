@@ -54,7 +54,7 @@ Authorization is enforced in application logic, not only through UI visibility. 
 ```
 app/ (routes)          /, /kyc, /kyc/[id], /refunds, /refunds/[id], /audit, /admin
         |
-components/shell       AppShell, permission-aware nav, breadcrumbs, demo role switcher
+components/shell       AppShell, permission-aware nav, breadcrumbs, demo role switcher, EN/KR toggle
 components/shared      DataTable, FilterBar, DetailPage, CaseDetail, ActionPanel, AuditTable, badges
         |
 modules/kyc            CaseModule policy + server action + queries
@@ -64,6 +64,7 @@ lib/workflow           executeCaseAction(): load -> authorize -> transition -> m
 lib/authz              permission strings, role matrix, authorize()/can()
 lib/audit              recordAudit(), listAuditEvents()
 lib/auth               AuthProvider interface, DemoAuthProvider (cookie), EntraAuthProvider (stub)
+lib/i18n               EN/KR UI strings, cookie-selected locale, translator for server and client components
         |
 lib/db + prisma/       Prisma client, SQLite schema (User, KycCase, RefundCase, CaseNote, AuditEvent), seed
 ```
