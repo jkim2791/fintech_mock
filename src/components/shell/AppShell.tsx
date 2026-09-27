@@ -1,6 +1,7 @@
 import type { AuthUser } from "@/lib/auth/types";
 import { can } from "@/lib/authz";
 import { SidebarNav, type NavItem } from "./SidebarNav";
+import { Breadcrumbs } from "./Breadcrumbs";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { RoleBadge } from "@/components/shared/StatusBadge";
 
@@ -21,35 +22,53 @@ export function AppShell({
 }) {
   const nav: NavItem[] = [
     { href: "/", label: "Overview" },
-    ...(can(user, "kyc:view") ? [{ href: "/kyc", label: "KYC Review" }] : []),
-    ...(can(user, "refund:view") ? [{ href: "/refunds", label: "Refund Operations" }] : []),
-    ...(can(user, "audit:view") ? [{ href: "/audit", label: "Audit Log" }] : []),
-    ...(can(user, "admin:access") ? [{ href: "/admin", label: "Administration" }] : []),
+    ...(can(user, "kyc:view") ? [{ href: "/kyc", label: "KYC Review", group: "Modules" }] : []),
+    ...(can(user, "refund:view") ? [{ href: "/refunds", label: "Refund Operations", group: "Modules" }] : []),
+    ...(can(user, "audit:view") ? [{ href: "/audit", label: "Audit Log", group: "Governance" }] : []),
+    ...(can(user, "admin:access") ? [{ href: "/admin", label: "Administration", group: "Governance" }] : []),
   ];
+  const initials = user.name
+    .split(/[\s-]+/)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
 
   return (
     <div className="flex min-h-screen">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <div className="text-sm font-semibold tracking-tight">Ops Portal</div>
-          <div className="text-xs text-slate-500">Internal tools · prototype</div>
+      <aside className="sticky top-0 flex h-screen w-56 shrink-0 flex-col border-r border-slate-200 bg-white">
+        <div className="flex h-14 items-center gap-2.5 border-b border-slate-200 px-4">
+          <div className="grid h-6 w-6 place-items-center rounded bg-slate-900 text-[10px] font-semibold tracking-tight text-white">OP</div>
+          <div className="leading-tight">
+            <div className="text-[13px] font-semibold text-slate-900">Ops Portal</div>
+            <div className="text-[11px] text-slate-500">Internal operations</div>
+          </div>
         </div>
         <SidebarNav items={nav} />
-        <div className="mt-auto border-t border-slate-200 px-5 py-3 text-[11px] leading-relaxed text-slate-400">
-          Synthetic data only. Authorization is enforced server-side; the UI only hints.
+        <div className="mt-auto border-t border-slate-200 px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-[11px] font-medium text-slate-700">{initials}</div>
+            <div className="min-w-0 leading-tight">
+              <div className="truncate text-[13px] font-medium text-slate-900">{user.name}</div>
+              <div className="truncate text-[11px] text-slate-500">{user.title}</div>
+            </div>
+          </div>
+          <div className="mt-2">
+            <RoleBadge role={user.role} />
+          </div>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-6">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium">{user.name}</span>
-            <span className="text-slate-400">·</span>
-            <span className="text-slate-500">{user.title}</span>
-            <RoleBadge role={user.role} />
-          </div>
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-slate-200 bg-white/95 px-6 backdrop-blur">
+          <Breadcrumbs items={nav} />
           {demoMode && <RoleSwitcher users={switchableUsers} currentUserId={user.id} />}
         </header>
-        <main className="flex-1 px-8 py-6">{children}</main>
+        <main className="flex-1 px-6 py-6 lg:px-8">
+          <div className="mx-auto w-full max-w-[1280px]">{children}</div>
+        </main>
+        <footer className="px-6 py-3 text-[11px] text-slate-400 lg:px-8">
+          Synthetic data only. Authorization is enforced server-side; the interface only reflects it.
+        </footer>
       </div>
     </div>
   );

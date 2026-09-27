@@ -1,40 +1,46 @@
 import { humanize } from "@/lib/format";
 
-const STATUS_STYLES: Record<string, string> = {
-  PENDING_REVIEW: "bg-sky-50 text-sky-700 ring-sky-200",
-  ESCALATED: "bg-amber-50 text-amber-800 ring-amber-200",
-  APPROVED: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  REJECTED: "bg-rose-50 text-rose-700 ring-rose-200",
+/* Status: neutral text with a semantic dot — readable in dense tables without
+   turning every row into a wall of colour. */
+const STATUS_DOTS: Record<string, string> = {
+  PENDING_REVIEW: "bg-sky-500",
+  ESCALATED: "bg-amber-500",
+  APPROVED: "bg-emerald-500",
+  REJECTED: "bg-rose-500",
 };
 
+/* Risk is the one signal that earns a filled tag: reviewers scan for it. */
 const RISK_STYLES: Record<string, string> = {
-  LOW: "bg-slate-100 text-slate-700 ring-slate-200",
-  MEDIUM: "bg-amber-50 text-amber-800 ring-amber-200",
-  HIGH: "bg-rose-50 text-rose-700 ring-rose-200",
+  LOW: "bg-slate-100 text-slate-600",
+  MEDIUM: "bg-amber-50 text-amber-800",
+  HIGH: "bg-rose-50 text-rose-700",
 };
 
-const ROLE_STYLES: Record<string, string> = {
-  OPS_ANALYST: "bg-slate-100 text-slate-700 ring-slate-200",
-  COMPLIANCE_APPROVER: "bg-indigo-50 text-indigo-700 ring-indigo-200",
-  ADMIN: "bg-violet-50 text-violet-700 ring-violet-200",
-};
-
-function Badge({ text, className }: { text: string; className: string }) {
+export function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={`inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${className}`}>
-      {text}
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-slate-700">
+      <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOTS[status] ?? "bg-slate-400"}`} />
+      {humanize(status)}
     </span>
   );
 }
 
-export function StatusBadge({ status }: { status: string }) {
-  return <Badge text={humanize(status)} className={STATUS_STYLES[status] ?? "bg-slate-100 text-slate-700 ring-slate-200"} />;
-}
-
 export function RiskBadge({ level }: { level: string }) {
-  return <Badge text={`${level} risk`} className={RISK_STYLES[level] ?? RISK_STYLES.LOW} />;
+  return (
+    <span
+      className={`inline-flex items-center whitespace-nowrap rounded px-1.5 py-px text-[11px] font-medium uppercase tracking-wide ${
+        RISK_STYLES[level] ?? RISK_STYLES.LOW
+      }`}
+    >
+      {level.toLowerCase()} risk
+    </span>
+  );
 }
 
 export function RoleBadge({ role }: { role: string }) {
-  return <Badge text={role} className={ROLE_STYLES[role] ?? ROLE_STYLES.OPS_ANALYST} />;
+  return (
+    <span className="inline-flex items-center whitespace-nowrap rounded border border-slate-200 bg-white px-1.5 py-px font-mono text-[10.5px] text-slate-500">
+      {role}
+    </span>
+  );
 }

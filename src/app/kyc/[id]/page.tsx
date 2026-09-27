@@ -26,7 +26,15 @@ export default async function KycCasePage({ params }: { params: Promise<{ id: st
       badges={<RiskBadge level={c.riskLevel} />}
       fields={[
         { label: "Customer", value: c.customerName },
-        { label: "Identification number", value: `${maskIdNumber(c.idNumber)} (masked)`, mono: true },
+        {
+          label: "Identification number",
+          value: (
+            <span>
+              {maskIdNumber(c.idNumber)} <span className="font-sans text-xs text-slate-400">masked</span>
+            </span>
+          ),
+          mono: true,
+        },
         { label: "Country", value: c.country },
         { label: "Submitted", value: formatDateTime(c.submittedAt) },
         { label: "Review reason", value: c.reviewReason },

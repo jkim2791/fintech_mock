@@ -26,7 +26,15 @@ export default async function RefundPage({ params }: { params: Promise<{ id: str
       badges={<RiskBadge level={r.riskLevel} />}
       fields={[
         { label: "Customer", value: r.customerName },
-        { label: "Transaction", value: `${maskReference(r.transactionId)} (masked)`, mono: true },
+        {
+          label: "Transaction",
+          value: (
+            <span>
+              {maskReference(r.transactionId)} <span className="font-sans text-xs text-slate-400">masked</span>
+            </span>
+          ),
+          mono: true,
+        },
         {
           label: "Amount",
           value: (
@@ -36,7 +44,18 @@ export default async function RefundPage({ params }: { params: Promise<{ id: str
             </span>
           ),
         },
-        { label: "Approval tier", value: isHighValue(r) ? "High value — COMPLIANCE_APPROVER or ADMIN" : "Standard — any approver" },
+        {
+          label: "Approval tier",
+          value: isHighValue(r) ? (
+            <span>
+              High value <span className="text-slate-500">· requires COMPLIANCE_APPROVER or ADMIN</span>
+            </span>
+          ) : (
+            <span>
+              Standard <span className="text-slate-500">· any reviewer may decide</span>
+            </span>
+          ),
+        },
         { label: "Requested", value: formatDateTime(r.requestedAt) },
         { label: "Refund reason", value: r.reason },
       ]}

@@ -14,23 +14,40 @@ import { formatDate, formatMoney, maskReference } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 const columns: Column<RefundCase>[] = [
-  { key: "id", header: "Refund", render: (r) => <Link href={`/refunds/${r.id}`} className="whitespace-nowrap font-mono text-xs font-medium underline">{r.id}</Link> },
-  { key: "txn", header: "Transaction", render: (r) => <span className="font-mono text-xs text-slate-600">{maskReference(r.transactionId)}</span> },
-  { key: "customer", header: "Customer", render: (r) => r.customerName },
+  {
+    key: "id",
+    header: "Refund",
+    render: (r) => (
+      <Link href={`/refunds/${r.id}`} className="whitespace-nowrap font-mono text-xs font-medium text-slate-900 hover:underline">
+        {r.id}
+      </Link>
+    ),
+  },
+  {
+    key: "customer",
+    header: "Customer",
+    render: (r) => (
+      <div className="leading-tight">
+        <div className="whitespace-nowrap text-slate-900">{r.customerName}</div>
+        <div className="mt-0.5 whitespace-nowrap font-mono text-[11px] text-slate-500">{maskReference(r.transactionId)}</div>
+      </div>
+    ),
+  },
   {
     key: "amount",
     header: "Amount",
+    align: "right",
     render: (r) => (
-      <span className="flex items-center gap-2 whitespace-nowrap tabular-nums">
-        {formatMoney(r.amount, r.currency)}
-        {isHighValue(r) && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">approver required</span>}
-      </span>
+      <div className="leading-tight">
+        <div className="whitespace-nowrap font-medium tabular-nums text-slate-900">{formatMoney(r.amount, r.currency)}</div>
+        {isHighValue(r) && <div className="mt-0.5 whitespace-nowrap text-[11px] text-amber-700">Approver required</div>}
+      </div>
     ),
   },
-  { key: "reason", header: "Reason", render: (r) => <span className="text-slate-600">{r.reason}</span>, className: "max-w-xs" },
+  { key: "reason", header: "Reason", render: (r) => <span className="block max-w-xs text-[13px] leading-snug text-slate-600">{r.reason}</span> },
   { key: "risk", header: "Risk", render: (r) => <RiskBadge level={r.riskLevel} /> },
   { key: "status", header: "Status", render: (r) => <StatusBadge status={r.status} /> },
-  { key: "requested", header: "Requested", render: (r) => <span className="whitespace-nowrap text-slate-600">{formatDate(r.requestedAt)}</span> },
+  { key: "requested", header: "Requested", render: (r) => <span className="whitespace-nowrap text-xs text-slate-500">{formatDate(r.requestedAt)}</span>, align: "right" },
 ];
 
 export default async function RefundQueuePage({ searchParams }: { searchParams: Promise<{ status?: string; risk?: string }> }) {
@@ -40,7 +57,7 @@ export default async function RefundQueuePage({ searchParams }: { searchParams: 
   const refunds = await listRefunds(params);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <PageHeader
         title="Refund Operations"
         description={`Refund request queue. Refunds above ${formatMoney(HIGH_VALUE_THRESHOLD_KRW, "KRW")} require a compliance approver.`}
@@ -48,8 +65,9 @@ export default async function RefundQueuePage({ searchParams }: { searchParams: 
       <FilterBar
         filters={[
           { name: "status", label: "Status", options: REVIEW_STATUSES },
-          { name: "risk", label: "Risk level", options: RISK_LEVELS },
+          { name: "risk", label: "Risk", options: RISK_LEVELS },
         ]}
+        summary={`${refunds.length} ${refunds.length === 1 ? "refund" : "refunds"}`}
       />
       <DataTable columns={columns} rows={refunds} />
     </div>

@@ -5,31 +5,56 @@ import { useRouter } from "next/navigation";
 import type { AuthUser } from "@/lib/auth/types";
 import { switchDemoUser } from "@/lib/auth/actions";
 
+const SHORT_ROLE: Record<string, string> = {
+  OPS_ANALYST: "Analyst",
+  COMPLIANCE_APPROVER: "Approver",
+  ADMIN: "Admin",
+};
+
+/** Segmented control: one click switches the demo identity (cookie + refresh). */
 export function RoleSwitcher({ users, currentUserId }: { users: AuthUser[]; currentUserId: string }) {
   const [pending, start] = useTransition();
   const router = useRouter();
+
+  function select(id: string) {
+    if (id === currentUserId) return;
+    start(async () => {
+      await switchDemoUser(id);
+      router.refresh();
+    });
+  }
+
   return (
-    <label className="flex items-center gap-2 text-xs text-slate-500">
-      <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">DEMO_MODE</span>
-      <span>Act as</span>
-      <select
-        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 disabled:opacity-50"
-        value={currentUserId}
-        disabled={pending}
-        onChange={(e) => {
-          const id = e.target.value;
-          start(async () => {
-            await switchDemoUser(id);
-            router.refresh();
-          });
-        }}
+    <div className="flex items-center gap-3">
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+        Demo · act as
+      </span>
+      <div
+        role="radiogroup"
+        aria-label="Switch demo user"
+        className={`inline-flex h-8 items-center rounded-md border border-slate-200 bg-white p-0.5 ${pending ? "opacity-60" : ""}`}
       >
-        {users.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.name} — {u.role}
-          </option>
-        ))}
-      </select>
-    </label>
+        {users.map((u) => {
+          const active = u.id === currentUserId;
+          return (
+            <button
+              key={u.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              disabled={pending}
+              title={`${u.name} · ${u.role}`}
+              onClick={() => select(u.id)}
+              className={`h-full rounded-[5px] px-2.5 text-xs transition-colors ${
+                active ? "bg-slate-900 font-medium text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+            >
+              {SHORT_ROLE[u.role] ?? u.role}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

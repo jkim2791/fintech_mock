@@ -42,7 +42,7 @@ No environment variables are required. Copy `.env.example` to `.env` only if you
 
 ## Demo users / roles
 
-Use the **DEMO_MODE · Act as** selector in the top-right of every page. It sets a plain cookie; there is no real authentication in this mode.
+Use the **Demo · act as** switcher (Analyst / Approver / Admin) in the top-right of every page. It sets a plain cookie; there is no real authentication in this mode.
 
 | User | Role | Can | Cannot |
 |---|---|---|---|
@@ -71,7 +71,7 @@ src/
     workflow/    ReviewStatus/CaseAction types, TRANSITIONS, CaseModule<T> contract, executeCaseAction()
     demo/        synthetic seed dataset (also used by the Admin "reset" action)
   components/
-    shell/       AppShell, SidebarNav, RoleSwitcher
+    shell/       AppShell, SidebarNav, Breadcrumbs, RoleSwitcher
     shared/      DataTable, FilterBar, DetailPage, CaseDetail, ActionPanel, AuditTable, badges
   modules/
     kyc/         CaseModule definition + policy (HIGH risk → kyc:approve_high_risk), server action, queries

@@ -7,4 +7,16 @@
 
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
+  font-feature-settings: "cv11", "ss01", "tnum";
+}
+
+:focus-visible {
+  outline: 2px solid rgb(15 23 42 / 0.6);
+  outline-offset: 2px;
+}
+
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline-offset: 0;
 }

@@ -9,7 +9,8 @@ import { ActionPanel } from "./ActionPanel";
 import { AuditTable } from "./AuditTable";
 import { DetailPage, type Field } from "./DetailPage";
 import { RoleBadge } from "./StatusBadge";
-import { Card } from "./Page";
+import { Card, SectionHeader } from "./Page";
+import { LockIcon } from "./Icons";
 
 /**
  * Module-agnostic detail screen: field grid + action panel + notes + per-entity
@@ -40,7 +41,7 @@ export async function CaseDetail<T extends { id: string; status: string }>({
   return (
     <DetailPage
       backHref={mod.basePath}
-      backLabel={`Back to ${mod.label} queue`}
+      backLabel={`${mod.label} queue`}
       title={entity.id}
       status={entity.status}
       badges={badges}
@@ -48,33 +49,34 @@ export async function CaseDetail<T extends { id: string; status: string }>({
       side={
         <>
           <ActionPanel key={user.id} entityId={entity.id} availability={availability} serverAction={serverAction} />
-          <Card title={`Notes (${notes.length})`}>
+          <Card title="Notes" meta={notes.length}>
             {notes.length === 0 ? (
               <p className="text-sm text-slate-500">No notes yet.</p>
             ) : (
-              <ul className="space-y-3">
+              <ol className="divide-y divide-slate-100">
                 {notes.map((n) => (
-                  <li key={n.id} className="text-sm">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <span className="font-medium text-slate-700">{n.authorName}</span>
+                  <li key={n.id} className="py-3 first:pt-0 last:pb-0">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                      <span className="font-medium text-slate-900">{n.authorName}</span>
                       <RoleBadge role={n.authorRole} />
-                      <span>{formatDateTime(n.createdAt)}</span>
+                      <span className="ml-auto font-mono text-[11px]">{formatDateTime(n.createdAt)}</span>
                     </div>
-                    <p className="mt-1 text-slate-800">{n.body}</p>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-slate-800">{n.body}</p>
                   </li>
                 ))}
-              </ul>
+              </ol>
             )}
           </Card>
         </>
       }
     >
       <section>
-        <h2 className="mb-2 text-sm font-medium">Audit history</h2>
+        <SectionHeader title="Audit history" meta={canViewAudit ? `${audit.length} events` : undefined} />
         {canViewAudit ? (
           <AuditTable events={audit} showEntity={false} />
         ) : (
-          <p className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500">
+          <p className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-500">
+            <LockIcon size={13} />
             Audit history is visible to COMPLIANCE_APPROVER and ADMIN.
           </p>
         )}

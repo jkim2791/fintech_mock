@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { can, PERMISSIONS, ROLE_PERMISSIONS } from "@/lib/authz";
 import { ROLES } from "@/lib/auth/types";
 import { AccessDenied, Card, PageHeader } from "@/components/shared/Page";
+import { CheckIcon } from "@/components/shared/Icons";
 import { ResetButton } from "./ResetButton";
 
 export const dynamic = "force-dynamic";
@@ -14,25 +15,37 @@ export default async function AdminPage() {
     <div className="space-y-6">
       <PageHeader title="Administration" description="Demo-only administrative functions." />
       <Card title="Demo data">
-        <p className="mb-3 text-sm text-slate-600">Reloads the synthetic dataset and clears notes and audit history. The reset itself is audited.</p>
-        <ResetButton />
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <p className="max-w-lg text-sm leading-relaxed text-slate-600">
+            Reloads the synthetic dataset and clears notes and audit history. The reset itself is written to the audit log.
+          </p>
+          <ResetButton />
+        </div>
       </Card>
-      <Card title="Role → permission matrix">
+      <Card title="Role → permission matrix" meta="Source of truth for every server-side check">
         <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="py-1.5">Permission</th>
+          <thead>
+            <tr className="text-left text-[11px] font-medium uppercase tracking-wider text-slate-500">
+              <th className="pb-2 font-medium">Permission</th>
               {ROLES.map((r) => (
-                <th key={r} className="py-1.5 text-center">{r}</th>
+                <th key={r} className="pb-2 text-center font-mono text-[11px] normal-case tracking-normal">
+                  {r}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {PERMISSIONS.map((p) => (
               <tr key={p}>
-                <td className="py-1.5 font-mono text-xs">{p}</td>
+                <td className="py-2 font-mono text-xs text-slate-800">{p}</td>
                 {ROLES.map((r) => (
-                  <td key={r} className="py-1.5 text-center">{ROLE_PERMISSIONS[r].has(p) ? "●" : <span className="text-slate-300">–</span>}</td>
+                  <td key={r} className="py-2 text-center">
+                    {ROLE_PERMISSIONS[r].has(p) ? (
+                      <CheckIcon size={14} strokeWidth={2} className="mx-auto text-emerald-600" />
+                    ) : (
+                      <span className="mx-auto block h-px w-2.5 bg-slate-300" />
+                    )}
+                  </td>
                 ))}
               </tr>
             ))}

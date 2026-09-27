@@ -26,3 +26,10 @@ export function formatDateTime(d: Date): string {
 export function humanize(value: string): string {
   return value.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 }
+
+/** Same as formatDateTime but split into [date, time] for stacked table cells. */
+export function splitDateTime(d: Date): [string, string] {
+  const full = formatDateTime(d);
+  const idx = full.indexOf(", ");
+  return idx === -1 ? [full, ""] : [full.slice(0, idx), full.slice(idx + 2)];
+}

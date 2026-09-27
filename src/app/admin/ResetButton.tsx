@@ -10,6 +10,7 @@ export function ResetButton() {
   const router = useRouter();
   return (
     <div className="flex items-center gap-3">
+      {message && <span className="text-xs text-slate-500">{message}</span>}
       <button
         type="button"
         disabled={pending}
@@ -20,11 +21,10 @@ export function ResetButton() {
             router.refresh();
           })
         }
-        className="rounded-md border border-rose-300 px-3 py-1.5 text-sm font-medium text-rose-800 hover:bg-rose-50 disabled:opacity-50"
+        className="inline-flex h-8 items-center rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-rose-700 hover:border-rose-300 hover:bg-rose-50 disabled:opacity-50"
       >
         {pending ? "Resetting…" : "Reset demo data"}
       </button>
-      {message && <span className="text-sm text-slate-600">{message}</span>}
     </div>
   );
 }

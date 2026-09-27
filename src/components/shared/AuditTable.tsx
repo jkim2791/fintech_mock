@@ -2,24 +2,41 @@ import Link from "next/link";
 import type { AuditEvent } from "@prisma/client";
 import { DataTable, type Column } from "./DataTable";
 import { RoleBadge, StatusBadge } from "./StatusBadge";
-import { formatDateTime } from "@/lib/format";
+import { ArrowRightIcon } from "./Icons";
+import { splitDateTime } from "@/lib/format";
 
 const ENTITY_PATHS: Record<string, string> = { KYC_CASE: "/kyc", REFUND: "/refunds" };
 
 export function AuditTable({ events, showEntity = true }: { events: AuditEvent[]; showEntity?: boolean }) {
   const columns: Column<AuditEvent>[] = [
-    { key: "ts", header: "When", render: (e) => <span className="whitespace-nowrap text-slate-600">{formatDateTime(e.timestamp)}</span> },
+    {
+      key: "ts",
+      header: "When",
+      render: (e) => {
+        const [date, time] = splitDateTime(e.timestamp);
+        return (
+          <span className="flex flex-col whitespace-nowrap font-mono text-xs leading-tight">
+            <span className="text-slate-900">{date}</span>
+            <span className="text-slate-500">{time}</span>
+          </span>
+        );
+      },
+    },
     {
       key: "actor",
       header: "Who",
       render: (e) => (
-        <div className="flex flex-col gap-0.5">
-          <span>{e.actorName}</span>
+        <span className="flex flex-col items-start gap-0.5">
+          <span className="whitespace-nowrap text-slate-900">{e.actorName}</span>
           <RoleBadge role={e.actorRole} />
-        </div>
+        </span>
       ),
     },
-    { key: "action", header: "Action", render: (e) => <span className="whitespace-nowrap font-mono text-xs">{e.action}</span> },
+    {
+      key: "action",
+      header: "Action",
+      render: (e) => <span className="whitespace-nowrap rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-800">{e.action}</span>,
+    },
     ...(showEntity
       ? [
           {
@@ -27,28 +44,35 @@ export function AuditTable({ events, showEntity = true }: { events: AuditEvent[]
             header: "On",
             render: (e: AuditEvent) =>
               ENTITY_PATHS[e.entityType] ? (
-                <Link href={`${ENTITY_PATHS[e.entityType]}/${e.entityId}`} className="font-mono text-xs text-slate-900 underline">
+                <Link href={`${ENTITY_PATHS[e.entityType]}/${e.entityId}`} className="whitespace-nowrap font-mono text-xs text-slate-900 hover:underline">
                   {e.entityId}
                 </Link>
               ) : (
-                <span className="font-mono text-xs text-slate-500">{e.entityType}</span>
+                <span className="whitespace-nowrap font-mono text-xs text-slate-500">{e.entityType}</span>
               ),
           },
         ]
       : []),
     {
       key: "change",
-      header: "What changed",
+      header: "Change",
       render: (e) =>
         e.previousState && e.newState && e.previousState !== e.newState ? (
-          <span className="flex items-center gap-1.5">
-            <StatusBadge status={e.previousState} /> → <StatusBadge status={e.newState} />
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            <StatusBadge status={e.previousState} />
+            <ArrowRightIcon size={12} className="text-slate-400" />
+            <StatusBadge status={e.newState} />
           </span>
         ) : (
-          <span className="text-slate-400">—</span>
+          <span className="text-slate-300">—</span>
         ),
     },
-    { key: "reason", header: "Why", render: (e) => <span className="text-slate-700">{e.reason ?? "—"}</span>, className: "min-w-48" },
+    {
+      key: "reason",
+      header: "Why",
+      render: (e) => <span className="block max-w-md text-[13px] leading-snug text-slate-700">{e.reason ?? "—"}</span>,
+      className: "min-w-48",
+    },
   ];
   return <DataTable columns={columns} rows={events} emptyMessage="No audit events yet." />;
 }
