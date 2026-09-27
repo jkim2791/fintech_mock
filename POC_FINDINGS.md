@@ -29,11 +29,13 @@ The central question is how much incremental engineering capacity each additiona
 | KYC Review workflow | Implemented | Queue, filters, detail, masked ID, 14 synthetic cases |
 | Refund workflow | Implemented | Queue, filters, detail, KRW 500,000 rule, 11 synthetic refunds |
 | Roles / RBAC | Implemented | `OPS_ANALYST`, `COMPLIANCE_APPROVER`, `ADMIN`; static permission matrix |
+| Maker-checker | Partial | Tiered approval enforced (HIGH-risk KYC, refunds > KRW 500,000); no same-user four-eyes constraint |
 | Server-side authorization | Implemented | Shared workflow engine via `executeCaseAction()` |
 | Audit logging | Implemented | One `AuditEvent` per successful action, written in the same transaction as the state change |
 | Shared workflow foundation | Implemented | Shared status model, transition rules, and `CaseModule` contract |
 | Shared UI / shell | Implemented | Shell, navigation, role switcher, tables, filters, detail layout, action panel, audit table |
 | Persistence | Implemented | Prisma on SQLite with deterministic seed |
+| Localization (EN/KR) | Implemented | Cookie-selected locale, 268 message keys, server and client components |
 | Smoke testing | Implemented | 16 engine-level checks via `npm run smoke` (count: `npm run smoke \| grep -c '^PASS'`) |
 | Browser validation | Implemented | Flows A–E exercised; one table-clipping defect found and fixed in `5975faa` |
 | Entra ID | Not implemented | Provider stub only; demo cookie identity |
@@ -42,7 +44,14 @@ The central question is how much incremental engineering capacity each additiona
 | Enterprise security hardening | Not implemented | Out of PoC scope |
 | Regulatory compliance validation | Not measured | Requires production review |
 
-Session evidence: the first working commit was pushed about an hour after the brief was received. This is a single observation, not a development-rate benchmark.
+Security boundaries of what was tested:
+
+- **Identity is unauthenticated.** Demo identity is an unsigned cookie naming one of three fixed users, so anyone with access to the app can switch roles. Authorization is enforced server-side given an identity; the identity itself is not authenticated.
+- **Audit integrity is by convention only.** `AuditEvent` rows are appended in the same transaction as the state change, but there is no database-level write protection, tamper evidence, retention policy, or export. This is where a managed platform's built-in auditing retains an advantage.
+- **Data at rest is plaintext.** RRN-style ID numbers and transaction references are masked in the UI but stored in plaintext in SQLite, with no encryption at rest and no field-level access logging.
+
+Session evidence: the first working commit
+ was pushed about an hour after the brief was received. This is a single observation, not a development-rate benchmark.
 
 ## 3. Reuse Evidence
 

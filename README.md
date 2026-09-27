@@ -25,9 +25,14 @@ The prototype deliberately contains two workflows rather than one polished appli
 - Refunds above KRW 500,000 require `refund:approve_high_value`. Non-KRW amounts are converted with fixed demo rates for the threshold check only.
 - The module adds a `CaseModule` policy, one server action, and two queries; everything else is the shared implementation used by KYC.
 
+### Localization
+
+- EN / KR toggle in the header; the selection is stored in a cookie and applied to server- and client-rendered UI text (`src/lib/i18n/`, 268 message keys). Identifiers such as role names, permission strings, status codes in audit rows, and case IDs stay in English.
+
 ### Audit Log
 
-Every successful note, escalate, approve, and reject writes one `AuditEvent` row in the same transaction as the state change; seeding and the admin reset are also recorded. Each event captures timestamp, actor id/name/role, action name (for example `KYC_CASE_APPROVED`), entity type and id, previous and new state, and the reason entered.
+Every successful note
+, escalate, approve, and reject writes one `AuditEvent` row in the same transaction as the state change; seeding and the admin reset are also recorded. Each event captures timestamp, actor id/name/role, action name (for example `KYC_CASE_APPROVED`), entity type and id, previous and new state, and the reason entered.
 
 `/audit` lists the most recent 200 events with module, action, and actor filters; detail pages show the events for that case. The log is append-only by convention only: no database-level write protection, tamper evidence, retention, or export.
 
