@@ -93,7 +93,15 @@ npm run dev
 
 No environment variables are required. `DEMO_MODE` defaults to `true`; `.env.example` documents the optional variables.
 
+Verified from a clean checkout at `e38e94e` (Node 22.12.0):
+
+- `npm install && npm run dev`: the `predev` step seeds 3 users, 14 KYC cases, and 11 refunds.
+- All seven routes return HTTP 200: `/`, `/kyc`, `/kyc/KYC-2025-0101`, `/refunds`, `/refunds/REF-2025-0201`, `/audit`, `/admin`.
+- As the default `OPS_ANALYST`, `/audit` and `/admin` render a server-side "Access denied" naming the missing permission (`audit:view`, `admin:access`).
+- `npm run smoke` passes all 16 checks; `npm run lint` and `npm run typecheck` pass.
+
 Other commands:
+
 
 ```bash
 npm run db:reset    # wipe and reseed prisma/dev.db
