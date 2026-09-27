@@ -1,6 +1,9 @@
 /**
  * Exercises the shared workflow engine directly (no browser) to prove the
- * authorization and audit guarantees for demo flows A–D. Run: npm run smoke
+ * authorization and audit guarantees for flows A–D, which correspond to
+ * README "Demo Flow" steps 1, 2, 4 and 5 (steps 3 and 6 are read-only UI
+ * views and are covered by the browser run). Run: npm run smoke
+
  * Resets the demo dataset first.
  */
 import { PrismaClient } from "@prisma/client";

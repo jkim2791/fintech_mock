@@ -97,7 +97,8 @@ Other commands:
 
 ```bash
 npm run db:reset    # wipe and reseed prisma/dev.db
-npm run smoke       # engine-level checks of the demo flows (resets data first)
+npm run smoke       # 16 engine-level checks covering Demo Flow steps 1, 2, 4, 5 (resets data first)
+
 npm run lint
 npm run typecheck
 ```

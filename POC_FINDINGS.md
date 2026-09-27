@@ -37,7 +37,8 @@ The central question is how much incremental engineering capacity each additiona
 | Persistence | Implemented | Prisma on SQLite with deterministic seed |
 | Localization (EN/KR) | Implemented | Cookie-selected locale, 268 message keys, server and client components |
 | Smoke testing | Implemented | 16 engine-level checks via `npm run smoke` (count: `npm run smoke \| grep -c '^PASS'`) |
-| Browser validation | Implemented | Flows A–E exercised; one table-clipping defect found and fixed in `5975faa` |
+| Browser validation | Implemented | README Demo Flow steps 1–6 exercised in a recorded browser run; one table-clipping defect found and fixed in `5975faa` |
+
 | Entra ID | Not implemented | Provider stub only; demo cookie identity |
 | External financial integrations | Not implemented | Synthetic data only |
 | CI/CD / production hosting | Not implemented | Local prototype |
