@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans), "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Noto Sans CJK KR", sans-serif;
-  --font-mono: var(--font-geist-mono), "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Noto Sans CJK KR", monospace;
+  --font-sans: var(--font-geist-sans), var(--font-noto-kr), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: var(--font-geist-mono), var(--font-noto-kr), "Apple SD Gothic Neo", "Malgun Gothic", monospace;
 }
 
 body {
