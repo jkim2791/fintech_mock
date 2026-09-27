@@ -1,0 +1,79 @@
+// SQLite is used for the local prototype only. Prisma enums are not supported on
+// SQLite, so Role / status / risk fields are strings constrained by TypeScript
+// union types in src/lib.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id    String @id
+  name  String
+  email String @unique
+  role  String // OPS_ANALYST | COMPLIANCE_APPROVER | ADMIN
+  title String
+}
+
+model KycCase {
+  id               String   @id // KYC-2025-0001
+  customerName     String
+  idNumber         String // synthetic RRN-style value; masked in the presentation layer
+  country          String
+  submittedAt      DateTime
+  riskLevel        String // LOW | MEDIUM | HIGH
+  status           String // PENDING_REVIEW | ESCALATED | APPROVED | REJECTED
+  reviewReason     String
+  assignedReviewer String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model RefundCase {
+  id            String   @id // REF-2025-0001
+  transactionId String
+  customerName  String
+  amount        Int // minor units are not needed for KRW; JPY/USD amounts are whole for the demo
+  currency      String
+  reason        String
+  riskLevel     String
+  status        String
+  requestedAt   DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Shared across modules: any reviewable entity can carry notes.
+model CaseNote {
+  id         Int      @id @default(autoincrement())
+  entityType String // KYC_CASE | REFUND
+  entityId   String
+  authorId   String
+  authorName String
+  authorRole String
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+// Append-only audit trail shared by every module.
+model AuditEvent {
+  id            Int      @id @default(autoincrement())
+  timestamp     DateTime @default(now())
+  actorId       String
+  actorName     String
+  actorRole     String
+  action        String // e.g. KYC_CASE_APPROVED
+  entityType    String
+  entityId      String
+  previousState String?
+  newState      String?
+  reason        String?
+
+  @@index([entityType, entityId])
+  @@index([timestamp])
+}
