@@ -51,8 +51,7 @@ Security boundaries of what was tested:
 - **Audit integrity is by convention only.** `AuditEvent` rows are appended in the same transaction as the state change, but there is no database-level write protection, tamper evidence, retention policy, or export. This is where a managed platform's built-in auditing retains an advantage.
 - **Data at rest is plaintext.** RRN-style ID numbers and transaction references are masked in the UI but stored in plaintext in SQLite, with no encryption at rest and no field-level access logging.
 
-Session evidence: the first working commit
- was pushed about an hour after the brief was received. This is a single observation, not a development-rate benchmark.
+Session evidence: the first working commit was pushed about an hour after the brief was received. This is a single observation, not a development-rate benchmark.
 
 ## 3. Reuse Evidence
 
