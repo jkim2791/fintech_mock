@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { AuthUser } from "@/lib/auth/types";
 
-export type EntityType = "KYC_CASE" | "REFUND" | "SYSTEM";
+export type EntityType = "KYC_CASE" | "REFUND" | "PAYMENT_EXCEPTION" | "SYSTEM";
 
 export interface AuditInput {
   actor: AuthUser;

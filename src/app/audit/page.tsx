@@ -27,7 +27,7 @@ export default async function AuditPage({
       />
       <FilterBar
         filters={[
-          { name: "entityType", label: t("filter.module"), options: ["KYC_CASE", "REFUND", "SYSTEM"], labels: { KYC_CASE: t("entity.KYC_CASE"), REFUND: t("entity.REFUND"), SYSTEM: t("entity.SYSTEM") } },
+          { name: "entityType", label: t("filter.module"), options: ["KYC_CASE", "REFUND", "PAYMENT_EXCEPTION", "SYSTEM"], labels: { KYC_CASE: t("entity.KYC_CASE"), REFUND: t("entity.REFUND"), PAYMENT_EXCEPTION: t("entity.PAYMENT_EXCEPTION"), SYSTEM: t("entity.SYSTEM") } },
           { name: "action", label: t("filter.action"), options: actions, labels: Object.fromEntries(actions.map((a) => [a, a])) },
           { name: "actorId", label: t("filter.actor"), options: DEMO_USERS.map((u) => u.id), labels: Object.fromEntries(DEMO_USERS.map((u) => [u.id, u.name])) },
         ]}

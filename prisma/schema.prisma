@@ -46,10 +46,25 @@ model RefundCase {
   updatedAt     DateTime @updatedAt
 }
 
+model PaymentException {
+  id              String   @id // PEX-2025-0001
+  paymentId       String // PG payment reference; masked in the presentation layer
+  customerId      String // internal customer identifier; masked in the presentation layer
+  amount          Int
+  currency        String // KRW only in the demo dataset
+  paymentMethod   String // CARD | BANK_TRANSFER | VIRTUAL_ACCOUNT | MOBILE_WALLET
+  exceptionCode   String // SETTLEMENT_MISMATCH | DUPLICATE_CAPTURE | UNCONFIRMED_DEBIT | PG_TIMEOUT | VELOCITY_LIMIT
+  exceptionReason String
+  status          String // PENDING_REVIEW | ESCALATED | APPROVED | REJECTED
+  occurredAt      DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 // Shared across modules: any reviewable entity can carry notes.
 model CaseNote {
   id         Int      @id @default(autoincrement())
-  entityType String // KYC_CASE | REFUND
+  entityType String // KYC_CASE | REFUND | PAYMENT_EXCEPTION
   entityId   String
   authorId   String
   authorName String

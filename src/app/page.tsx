@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { PERMISSIONS, can } from "@/lib/authz";
 import { kycSummary } from "@/modules/kyc/queries";
 import { refundSummary } from "@/modules/refunds/queries";
+import { paymentExceptionSummary } from "@/modules/payments/queries";
 import { listAuditEvents } from "@/lib/audit";
 import { PageHeader, SectionHeader } from "@/components/shared/Page";
 import { AuditTable } from "@/components/shared/AuditTable";
@@ -55,9 +56,10 @@ function QueueSummary({ title, description, href, counts, t }: { title: string; 
 export default async function Overview() {
   const user = await requireUser();
   const t = await getT();
-  const [kyc, refunds, recent] = await Promise.all([
+  const [kyc, refunds, payments, recent] = await Promise.all([
     kycSummary(),
     refundSummary(),
+    paymentExceptionSummary(),
     can(user, "audit:view") ? listAuditEvents({ limit: 8 }) : Promise.resolve([]),
   ]);
 
@@ -67,9 +69,10 @@ export default async function Overview() {
         title={t("overview.title")}
         description={t("overview.description")}
       />
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {can(user, "kyc:view") && <QueueSummary title={t("nav.kyc")} description={t("overview.kycSubtitle")} href="/kyc" counts={kyc} t={t} />}
         {can(user, "refund:view") && <QueueSummary title={t("nav.refunds")} description={t("overview.refundSubtitle")} href="/refunds" counts={refunds} t={t} />}
+        {can(user, "payment:view") && <QueueSummary title={t("nav.payments")} description={t("overview.paymentSubtitle")} href="/payments" counts={payments} t={t} />}
       </div>
 
       <section>

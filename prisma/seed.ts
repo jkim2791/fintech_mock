@@ -6,6 +6,6 @@ const force = process.argv.includes("--force");
 
 seedDemoData(prisma, { force })
   .then((r) => {
-    console.log(r.seeded ? `Seeded ${r.users} users, ${r.kycCases} KYC cases, ${r.refunds} refunds.` : "Database already seeded (use --force to reset).");
+    console.log(r.seeded ? `Seeded ${r.users} users, ${r.kycCases} KYC cases, ${r.refunds} refunds, ${r.paymentExceptions} payment exceptions.` : "Database already seeded (use --force to reset).");
   })
   .finally(() => prisma.$disconnect());

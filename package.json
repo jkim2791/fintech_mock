@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "db:setup": "prisma db push --skip-generate && tsx prisma/seed.ts",
     "db:reset": "prisma db push --skip-generate --force-reset && tsx prisma/seed.ts --force",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "smoke:payments": "tsx scripts/smoke-payments.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

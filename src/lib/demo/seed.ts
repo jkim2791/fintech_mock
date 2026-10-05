@@ -37,6 +37,19 @@ const REFUNDS = [
   { id: "REF-2025-0211", transactionId: "TXN-A9B2C5D6-KRW", customerName: "Im Ha-rin", amount: 505_000, currency: "KRW", reason: "Wrong beneficiary on remittance", riskLevel: "MEDIUM", status: "PENDING_REVIEW", requestedAt: d("2025-09-26T10:05:00+09:00") },
 ];
 
+const PAYMENT_EXCEPTIONS = [
+  { id: "PEX-2025-0301", paymentId: "PAY-4D7A1F93-CARD", customerId: "CUST-00812734", amount: 3_200_000, currency: "KRW", paymentMethod: "CARD", exceptionCode: "DUPLICATE_CAPTURE", exceptionReason: "Two captures for one authorization within 40 seconds; merchant retry suspected", status: "PENDING_REVIEW", occurredAt: d("2025-09-22T08:14:00+09:00") },
+  { id: "PEX-2025-0302", paymentId: "PAY-9B2E6C01-VACC", customerId: "CUST-00193847", amount: 185_000, currency: "KRW", paymentMethod: "VIRTUAL_ACCOUNT", exceptionCode: "SETTLEMENT_MISMATCH", exceptionReason: "Deposit received is KRW 5,000 short of invoiced amount", status: "PENDING_REVIEW", occurredAt: d("2025-09-22T10:02:00+09:00") },
+  { id: "PEX-2025-0303", paymentId: "PAY-3F8C2A77-WLLT", customerId: "CUST-00458201", amount: 42_000, currency: "KRW", paymentMethod: "MOBILE_WALLET", exceptionCode: "PG_TIMEOUT", exceptionReason: "PG did not return a final status; wallet shows debit", status: "PENDING_REVIEW", occurredAt: d("2025-09-22T13:47:00+09:00") },
+  { id: "PEX-2025-0304", paymentId: "PAY-7A1D9E42-BANK", customerId: "CUST-00760915", amount: 1_500_000, currency: "KRW", paymentMethod: "BANK_TRANSFER", exceptionCode: "UNCONFIRMED_DEBIT", exceptionReason: "Customer bank confirms debit; no matching credit in settlement account", status: "ESCALATED", occurredAt: d("2025-09-23T09:30:00+09:00") },
+  { id: "PEX-2025-0305", paymentId: "PAY-C5E03B18-CARD", customerId: "CUST-00327764", amount: 96_500, currency: "KRW", paymentMethod: "CARD", exceptionCode: "VELOCITY_LIMIT", exceptionReason: "Seventh card payment in 10 minutes from one device", status: "PENDING_REVIEW", occurredAt: d("2025-09-23T15:12:00+09:00") },
+  { id: "PEX-2025-0306", paymentId: "PAY-1E6F4D29-WLLT", customerId: "CUST-00084532", amount: 28_000, currency: "KRW", paymentMethod: "MOBILE_WALLET", exceptionCode: "PG_TIMEOUT", exceptionReason: "Timeout after customer confirmed in app; PG later reported success", status: "APPROVED", occurredAt: d("2025-09-24T08:55:00+09:00") },
+  { id: "PEX-2025-0307", paymentId: "PAY-8D2B7C60-VACC", customerId: "CUST-00591278", amount: 760_000, currency: "KRW", paymentMethod: "VIRTUAL_ACCOUNT", exceptionCode: "SETTLEMENT_MISMATCH", exceptionReason: "Deposit made after virtual account expiry", status: "PENDING_REVIEW", occurredAt: d("2025-09-24T11:20:00+09:00") },
+  { id: "PEX-2025-0308", paymentId: "PAY-2C9A5F83-CARD", customerId: "CUST-00246139", amount: 2_050_000, currency: "KRW", paymentMethod: "CARD", exceptionCode: "VELOCITY_LIMIT", exceptionReason: "Amount and frequency both above profile; card issuer flagged", status: "PENDING_REVIEW", occurredAt: d("2025-09-25T09:05:00+09:00") },
+  { id: "PEX-2025-0309", paymentId: "PAY-6B4E8A17-BANK", customerId: "CUST-00673420", amount: 310_000, currency: "KRW", paymentMethod: "BANK_TRANSFER", exceptionCode: "UNCONFIRMED_DEBIT", exceptionReason: "Customer reports debit; bank reference not found in any statement", status: "REJECTED", occurredAt: d("2025-09-25T14:40:00+09:00") },
+  { id: "PEX-2025-0310", paymentId: "PAY-E0F31D54-CARD", customerId: "CUST-00915086", amount: 54_000, currency: "KRW", paymentMethod: "CARD", exceptionCode: "DUPLICATE_CAPTURE", exceptionReason: "Same amount captured twice; second capture carries a new order ID", status: "PENDING_REVIEW", occurredAt: d("2025-09-26T09:50:00+09:00") },
+];
+
 const SYSTEM_ACTOR: AuthUser = { id: "system", name: "Seed script", email: "system@localhost", role: "ADMIN", title: "System" };
 
 export async function seedDemoData(prisma: PrismaClient, opts: { force?: boolean; actor?: AuthUser } = {}) {
@@ -49,14 +62,17 @@ export async function seedDemoData(prisma: PrismaClient, opts: { force?: boolean
     prisma.caseNote.deleteMany(),
     prisma.kycCase.deleteMany(),
     prisma.refundCase.deleteMany(),
+    prisma.paymentException.deleteMany(),
     prisma.user.deleteMany(),
     prisma.user.createMany({ data: DEMO_USERS }),
     prisma.kycCase.createMany({ data: KYC_CASES }),
     prisma.refundCase.createMany({ data: REFUNDS }),
+    prisma.paymentException.createMany({ data: PAYMENT_EXCEPTIONS }),
     prisma.caseNote.createMany({
       data: [
         { entityType: "KYC_CASE", entityId: "KYC-2025-0104", authorId: "u-analyst", authorName: "Park Ji-woo", authorRole: "OPS_ANALYST", body: "Customer states funds originate from family business in Hanoi; no supporting docs yet." },
         { entityType: "REFUND", entityId: "REF-2025-0204", authorId: "u-analyst", authorName: "Park Ji-woo", authorRole: "OPS_ANALYST", body: "Device used for the disputed transaction differs from the customer's usual device." },
+        { entityType: "PAYMENT_EXCEPTION", entityId: "PEX-2025-0304", authorId: "u-analyst", authorName: "Park Ji-woo", authorRole: "OPS_ANALYST", body: "Requested settlement bank trace; expected within two business days." },
       ],
     }),
     prisma.auditEvent.createMany({
@@ -69,9 +85,12 @@ export async function seedDemoData(prisma: PrismaClient, opts: { force?: boolean
         { actorId: "u-analyst", actorName: "Park Ji-woo", actorRole: "OPS_ANALYST", action: "REFUND_ESCALATED", entityType: "REFUND", entityId: "REF-2025-0204", previousState: "PENDING_REVIEW", newState: "ESCALATED", reason: "Possible fraud – needs compliance review", timestamp: d("2025-09-23T15:50:00+09:00") },
         { actorId: "u-approver", actorName: "Kim Min-seo", actorRole: "COMPLIANCE_APPROVER", action: "REFUND_APPROVED", entityType: "REFUND", entityId: "REF-2025-0205", previousState: "PENDING_REVIEW", newState: "APPROVED", reason: "Confirmed spread misconfiguration", timestamp: d("2025-09-24T10:40:00+09:00") },
         { actorId: "u-approver", actorName: "Kim Min-seo", actorRole: "COMPLIANCE_APPROVER", action: "REFUND_REJECTED", entityType: "REFUND", entityId: "REF-2025-0209", previousState: "PENDING_REVIEW", newState: "REJECTED", reason: "Cooling-off period had already lapsed", timestamp: d("2025-09-25T15:10:00+09:00") },
+        { actorId: "u-analyst", actorName: "Park Ji-woo", actorRole: "OPS_ANALYST", action: "PAYMENT_EXCEPTION_ESCALATED", entityType: "PAYMENT_EXCEPTION", entityId: "PEX-2025-0304", previousState: "PENDING_REVIEW", newState: "ESCALATED", reason: "Above KRW 1,000,000 and funds unaccounted for", timestamp: d("2025-09-23T10:05:00+09:00") },
+        { actorId: "u-analyst", actorName: "Park Ji-woo", actorRole: "OPS_ANALYST", action: "PAYMENT_EXCEPTION_APPROVED", entityType: "PAYMENT_EXCEPTION", entityId: "PEX-2025-0306", previousState: "PENDING_REVIEW", newState: "APPROVED", reason: "PG success callback received; ledger reconciled", timestamp: d("2025-09-24T09:30:00+09:00") },
+        { actorId: "u-approver", actorName: "Kim Min-seo", actorRole: "COMPLIANCE_APPROVER", action: "PAYMENT_EXCEPTION_REJECTED", entityType: "PAYMENT_EXCEPTION", entityId: "PEX-2025-0309", previousState: "PENDING_REVIEW", newState: "REJECTED", reason: "No debit found at the customer's bank; customer notified", timestamp: d("2025-09-25T16:00:00+09:00") },
       ],
     }),
   ]);
 
-  return { seeded: true as const, kycCases: KYC_CASES.length, refunds: REFUNDS.length, users: DEMO_USERS.length };
+  return { seeded: true as const, kycCases: KYC_CASES.length, refunds: REFUNDS.length, paymentExceptions: PAYMENT_EXCEPTIONS.length, users: DEMO_USERS.length };
 }

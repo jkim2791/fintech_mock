@@ -18,14 +18,20 @@ export const PERMISSIONS = [
   "refund:approve",
   "refund:approve_high_value",
   "refund:reject",
+  "payment:view",
+  "payment:note",
+  "payment:escalate",
+  "payment:approve",
+  "payment:approve_high_value",
+  "payment:reject",
   "audit:view",
   "admin:access",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
 
-// Analysts handle the standard tier; HIGH-risk KYC and high-value refunds are
-// reserved for the checker roles (maker-checker).
+// Analysts handle the standard tier; HIGH-risk KYC, high-value refunds and
+// high-value payment exceptions are reserved for the checker roles (maker-checker).
 const ANALYST: Permission[] = [
   "kyc:view",
   "kyc:note",
@@ -37,9 +43,14 @@ const ANALYST: Permission[] = [
   "refund:escalate",
   "refund:approve",
   "refund:reject",
+  "payment:view",
+  "payment:note",
+  "payment:escalate",
+  "payment:approve",
+  "payment:reject",
 ];
 
-const APPROVER: Permission[] = [...ANALYST, "kyc:approve_high_risk", "refund:approve_high_value", "audit:view"];
+const APPROVER: Permission[] = [...ANALYST, "kyc:approve_high_risk", "refund:approve_high_value", "payment:approve_high_value", "audit:view"];
 
 export const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   OPS_ANALYST: new Set(ANALYST),

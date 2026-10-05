@@ -27,6 +27,7 @@ export async function AppShell({
     { href: "/", label: t("nav.overview") },
     ...(can(user, "kyc:view") ? [{ href: "/kyc", label: t("nav.kyc"), group: t("nav.group.modules") }] : []),
     ...(can(user, "refund:view") ? [{ href: "/refunds", label: t("nav.refunds"), group: t("nav.group.modules") }] : []),
+    ...(can(user, "payment:view") ? [{ href: "/payments", label: t("nav.payments"), group: t("nav.group.modules") }] : []),
     ...(can(user, "audit:view") ? [{ href: "/audit", label: t("nav.audit"), group: t("nav.group.governance") }] : []),
     ...(can(user, "admin:access") ? [{ href: "/admin", label: t("nav.admin"), group: t("nav.group.governance") }] : []),
   ];
