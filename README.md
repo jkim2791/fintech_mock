@@ -1,174 +1,157 @@
 # Korean Fintech Internal Operations PoC
 
-A time-boxed proof of concept: two internal review workflows (KYC Review and Refund Operations) built on a shared Next.js/TypeScript foundation with role-based authorization and an audit trail. It was built to evaluate whether Devin-assisted custom development can support internal fintech workflows that might otherwise be implemented on a low-code platform such as Microsoft Power Apps.
+A time-boxed proof of concept: three internal review workflows — KYC Review, Refund Operations and Payment Exception Review — on one Next.js/TypeScript foundation with role-based authorization, a transactional audit trail and EN/KR localization. It was built to evaluate whether Devin-assisted custom development can support internal fintech workflows that might otherwise be implemented on a low-code platform such as Microsoft Power Apps.
 
 This repository is not an attempt to recreate Power Apps as a product. All data is synthetic.
 
+| Document | Content |
+|---|---|
+| `README.md` (this file) | What exists, how to run it, how it was verified |
+| [`POC_FINDINGS.md`](POC_FINDINGS.md) | Build-vs-buy evidence and its limits |
+| [`THIRD_WORKFLOW_EXPERIMENT.md`](THIRD_WORKFLOW_EXPERIMENT.md) | Measured record of adding the third workflow |
+
 ## Purpose
 
-The evaluation question is narrow: can reusable, code-owned internal tooling reduce the marginal cost of building additional applications while keeping acceptable control over authorization, workflow logic, and auditability?
+Can reusable, code-owned internal tooling reduce the marginal cost of adding applications while keeping acceptable control over authorization, workflow logic and auditability?
 
-The prototype deliberately contains two workflows rather than one polished application. The first module establishes the shared foundation; the second exists to test how much of it is actually reused.
+The first workflow established the shared foundation. The second tested architectural reuse. The third was added as a timed experiment to observe how much workflow-specific work a new module actually needs.
 
-## What Was Built
+## Workflows
 
-### KYC Review
+| | KYC Review | Refund Operations | Payment Exception Review |
+|---|---|---|---|
+| Routes | `/kyc`, `/kyc/[id]` | `/refunds`, `/refunds/[id]` | `/payments`, `/payments/[id]` |
+| Queue filters | status, risk | status, risk | status, payment method, exception code |
+| Detail fields | customer, masked RRN-style ID, country, submitted, review reason, reviewer | customer, masked transaction ref, amount, tier, requested, reason | masked payment ID, masked customer ID, amount, method, tier, exception code and reason, occurred time |
+| Tier rule | HIGH-risk approve needs `kyc:approve_high_risk` | > KRW 500,000 needs `refund:approve_high_value` | > KRW 1,000,000 needs `payment:approve_high_value` |
+| Synthetic rows | 14 | 11 | 10 |
 
-- Case queue at `/kyc` with status and risk filters (URL query parameters).
-- Case detail at `/kyc/[id]` with the synthetic RRN-style ID number masked at render time (`930412-2******`), notes, and, for roles holding `audit:view`, the case's audit history.
-- Actions: add note, escalate, approve, reject. All but notes require a reason.
-- Approving a HIGH-risk case requires `kyc:approve_high_risk`, which `OPS_ANALYST` does not hold.
+All three share the same actions (add note, escalate, approve, reject — all but notes require a reason), the same status model (`PENDING_REVIEW -> ESCALATED -> APPROVED | REJECTED`), notes, per-case audit history and the queue/detail layout. Each module's own code is a `CaseModule` policy, one server action, two queries and two pages; see `THIRD_WORKFLOW_EXPERIMENT.md` for the exact file list of the third.
 
-### Refund Operations
+## Shared Capabilities
 
-- Refund queue at `/refunds` with the same filters; detail at `/refunds/[id]` with amount, approval tier, and a masked transaction reference. Same actions and reason requirement as KYC.
-- Refunds above KRW 500,000 require `refund:approve_high_value`. Non-KRW amounts are converted with fixed demo rates for the threshold check only.
-- The module adds a `CaseModule` policy, one server action, and two queries; everything else is the shared implementation used by KYC.
-
-### Localization
-
-- EN / KR toggle in the header; the selection is stored in a cookie and applied to server- and client-rendered UI text (`src/lib/i18n/`, 268 message keys). Identifiers such as role names, permission strings, status codes in audit rows, and case IDs stay in English.
-
-### Audit Log
-
-Every successful note
-, escalate, approve, and reject writes one `AuditEvent` row in the same transaction as the state change; seeding and the admin reset are also recorded. Each event captures timestamp, actor id/name/role, action name (for example `KYC_CASE_APPROVED`), entity type and id, previous and new state, and the reason entered.
-
-`/audit` lists the most recent 200 events with module, action, and actor filters; detail pages show the events for that case. The log is append-only by convention only: no database-level write protection, tamper evidence, retention, or export.
-
-## Roles and Authorization
-
-Three roles are implemented, each with a fixed demo user.
+**Roles and authorization.** Three roles, each with a fixed demo user. Modules ask for permission strings (`src/lib/authz/permissions.ts`), never role names.
 
 | Capability | OPS_ANALYST | COMPLIANCE_APPROVER | ADMIN |
 |---|---|---|---|
-| View KYC cases and refunds | yes | yes | yes |
+| View all three queues | yes | yes | yes |
 | Add notes, escalate, reject | yes | yes | yes |
-| Approve LOW/MEDIUM-risk KYC, refunds <= KRW 500,000 | yes | yes | yes |
-| Approve HIGH-risk KYC | no | yes | yes |
-| Approve refunds > KRW 500,000 | no | yes | yes |
+| Approve standard tier (LOW/MEDIUM KYC, refunds <= 500k, exceptions <= 1M KRW) | yes | yes | yes |
+| Approve HIGH-risk KYC, refunds > 500k, exceptions > 1M KRW | no | yes | yes |
 | View audit log | no | yes | yes |
-| Administration (permission matrix, reset demo data) | no | no | yes |
+| Admin (permission matrix, reset demo data) | no | no | yes |
 
-Roles map to permission strings in `src/lib/authz/permissions.ts`; module code asks for a permission, never a role name.
+Authorization is enforced server-side, not only through UI visibility: every action runs through `executeCaseAction()` (`src/lib/workflow/engine.ts`), which reloads the entity, checks the permission the module's policy requires, validates the status transition, then commits the state change and the audit row in one transaction. Locked actions are still submittable so the server-side rejection can be observed.
 
-Authorization is enforced in application logic, not only through UI visibility. Every action goes through `executeCaseAction()` (`src/lib/workflow/engine.ts`), which reloads the entity, calls `authorize()` for the permission the module's policy requires, validates the status transition, and commits the state change and audit row together. Actions the current role does not hold are rendered locked but still submittable, so the server-side rejection can be observed. `npm run smoke` exercises the same rules without a browser.
+**Audit log.** One `AuditEvent` per successful action, written in the same transaction as the state change, capturing timestamp, actor id/name/role, action name (e.g. `PAYMENT_EXCEPTION_APPROVED`), entity type and id, previous and new state and the reason. `/audit` lists the latest 200 events with module, action and actor filters; each row links to its case. Append-only by convention only: no database-level write protection, tamper evidence, retention or export.
+
+**Localization.** EN / KR toggle in the header; the selection is a cookie applied to server- and client-rendered text (`src/lib/i18n/`, 324 message keys). Identifiers — role and permission names, status codes in audit rows, case IDs — stay in English. Noto Sans KR is bundled so Hangul renders without a Korean system font.
+
+**Testing.** Two engine-level smoke scripts run the workflow rules without a browser and reset the dataset first: `npm run smoke` (16 checks, KYC and Refund) and `npm run smoke:payments` (23 checks, Payment Exception). Both end by asserting that every successful action produced exactly one audit row. Browser runs were recorded for the KYC/Refund demo flow and for the payment workflow.
 
 ## Architecture
 
 ```
-app/ (routes)          /, /kyc, /kyc/[id], /refunds, /refunds/[id], /audit, /admin
+app/                 /, /kyc, /kyc/[id], /refunds, /refunds/[id], /payments, /payments/[id], /audit, /admin
         |
-components/shell       AppShell, permission-aware nav, breadcrumbs, demo role switcher, EN/KR toggle
-components/shared      DataTable, FilterBar, DetailPage, CaseDetail, ActionPanel, AuditTable, badges
+components/shell     AppShell, permission-aware nav, breadcrumbs, demo role switcher, EN/KR toggle
+components/shared    DataTable, FilterBar, DetailPage, CaseDetail, ActionPanel, AuditTable, badges
         |
-modules/kyc            CaseModule policy + server action + queries
-modules/refunds        CaseModule policy + server action + queries
+modules/kyc          CaseModule policy + server action + queries
+modules/refunds      CaseModule policy + server action + queries
+modules/payments     CaseModule policy + server action + queries
         |
-lib/workflow           executeCaseAction(): load -> authorize -> transition -> mutate + audit
-lib/authz              permission strings, role matrix, authorize()/can()
-lib/audit              recordAudit(), listAuditEvents()
-lib/auth               AuthProvider interface, DemoAuthProvider (cookie), EntraAuthProvider (stub)
-lib/i18n               EN/KR UI strings, cookie-selected locale, translator for server and client components
+lib/workflow         executeCaseAction(): load -> authorize -> transition -> mutate + audit
+lib/authz            permission strings, role matrix, authorize()/can()
+lib/audit            recordAudit(), listAuditEvents()
+lib/auth             AuthProvider interface, DemoAuthProvider (cookie), EntraAuthProvider (stub)
+lib/i18n             EN/KR strings, cookie-selected locale, translator for server and client components
         |
-lib/db + prisma/       Prisma client, SQLite schema (User, KycCase, RefundCase, CaseNote, AuditEvent), seed
+lib/db + prisma/     Prisma client, SQLite schema (User, KycCase, RefundCase, PaymentException, CaseNote, AuditEvent), seed
 ```
 
-Shared between KYC and Refunds: the shell and navigation, identity resolution, the permission matrix and `authorize()`, the workflow engine and status model (`PENDING_REVIEW -> ESCALATED -> APPROVED | REJECTED`), audit recording and display, the `CaseNote` table, and every UI component. Module-specific: the Prisma model, the `CaseModule` policy deciding which permission each action needs, queue columns, and detail fields.
-
-Mutations are Next.js server actions; there is no separate API layer.
+Adding a module means a Prisma model, a `src/modules/<name>/` directory and two pages, plus registering the entity at fixed shared points: permission list and role matrix, `EntityType`, navigation, overview card, audit filter and link map, dictionaries, seed. Mutations are Next.js server actions; there is no separate API layer.
 
 ## Running Locally
 
-Prerequisites: Node.js 22 and npm (verified with Node 22.12.0, npm 10.9.0). No external services.
+Prerequisites: Node.js 22 and npm (verified with Node 22.12.0, npm 10.9.0). No external services or environment variables; `DEMO_MODE` defaults to `true` and `.env.example` documents the optional variables.
 
 ```bash
 git clone https://github.com/jkim2791/fintech_mock.git
 cd fintech_mock
 npm install
-npm run dev
+npm run dev          # predev creates prisma/dev.db, pushes the schema, seeds; serves http://localhost:3000
 ```
-
-`npm run dev` runs a `predev` step that creates `prisma/dev.db`, pushes the schema, and seeds the synthetic dataset (skipped if already seeded), then starts the dev server at http://localhost:3000.
-
-No environment variables are required. `DEMO_MODE` defaults to `true`; `.env.example` documents the optional variables.
-
-Verified from a clean checkout at `e38e94e` (Node 22.12.0):
-
-- `npm install && npm run dev`: the `predev` step seeds 3 users, 14 KYC cases, and 11 refunds.
-- All seven routes return HTTP 200: `/`, `/kyc`, `/kyc/KYC-2025-0101`, `/refunds`, `/refunds/REF-2025-0201`, `/audit`, `/admin`.
-- As the default `OPS_ANALYST`, `/audit` and `/admin` render a server-side "Access denied" naming the missing permission (`audit:view`, `admin:access`).
-- `npm run smoke` passes all 16 checks; `npm run lint` and `npm run typecheck` pass.
 
 Other commands:
 
-
 ```bash
-npm run db:reset    # wipe and reseed prisma/dev.db
-npm run smoke       # 16 engine-level checks covering Demo Flow steps 1, 2, 4, 5 (resets data first)
-
+npm run db:reset         # wipe and reseed prisma/dev.db
+npm run smoke            # 16 KYC/Refund engine checks (resets data first)
+npm run smoke:payments   # 23 Payment Exception engine checks (resets data first)
 npm run lint
 npm run typecheck
 ```
 
+## Validation
+
+Verified from a clean clone at `691a29f` (Node 22.12.0):
+
+| Check | Result |
+|---|---|
+| `npm install && npm run db:setup` | Seeded 3 users, 14 KYC cases, 11 refunds, 10 payment exceptions |
+| `npm run smoke` | 16 PASS, 0 FAIL |
+| `npm run smoke:payments` | 23 PASS, 0 FAIL |
+| `npm run lint`, `npm run typecheck` | exit 0 |
+| Routes (dev server) | `/`, `/kyc`, `/kyc/KYC-2025-0101`, `/refunds`, `/refunds/REF-2025-0201`, `/payments`, `/payments/PEX-2025-0301`, `/audit`, `/admin` all HTTP 200 |
+| Analyst on `/audit`, `/admin` | Server-side "Access denied" naming the missing permission |
+
+Known defect, deliberately left in place: the KYC and Refund modules build the audit action name as `action + "D"`, so a live Reject is recorded as `KYC_CASE_REJECTD` / `REFUND_REJECTD`. It was found by the payment module's tests (that module uses an explicit name map) and is documented in `THIRD_WORKFLOW_EXPERIMENT.md`.
+
 ## Demo Flow
 
-The demo user switcher (Analyst / Approver / Admin) is in the top-right of every page. It sets a plain cookie naming one of three fixed users; the default is the analyst. Start from a fresh dataset (`npm run db:reset`) so the case IDs below are in their seeded state.
+The role switcher (Analyst / Approver / Admin) sits top-right on every page; the default is the analyst. Start from `npm run db:reset` so the IDs below are in their seeded state.
 
-1. As **Analyst**, open `/kyc/KYC-2025-0101` (HIGH risk, pending). Add a note. Click *Approve*: the button is marked locked; submitting a reason returns the server's rejection. Escalate the case with a reason.
-2. Switch to **Approver** on the same case. Approve with a reason. The status becomes Approved and `KYC_CASE_APPROVED` appears in the case's audit history.
-3. Open `/audit` and confirm the note, escalation, and approval are listed with actor, role, state change, and reason.
-4. As **Analyst**, open `/refunds/REF-2025-0201` (KRW 1,250,000). *Approve* is locked; submitting is rejected. Approve a refund at or below KRW 500,000 (for example `REF-2025-0202`) to see the standard tier succeed.
-5. Switch to **Approver** and approve `REF-2025-0201`. `REFUND_APPROVED` is recorded with previous state, new state, and reason.
-6. Switch to **Admin** and open `/admin` to see the role/permission matrix and the reset action.
+1. As **Analyst**, open `/kyc/KYC-2025-0101` (HIGH risk). Add a note. *Approve* is locked; submitting a reason returns the server's rejection. Escalate with a reason.
+2. Switch to **Approver** on the same case and approve. `KYC_CASE_APPROVED` appears in the case's audit history.
+3. Open `/audit` and confirm the note, escalation and approval with actor, role, state change and reason.
+4. As **Analyst**, open `/refunds/REF-2025-0201` (KRW 1,250,000): approval is rejected server-side. Approve `REF-2025-0202` (standard tier) to see it succeed.
+5. Switch to **Approver** and approve `REF-2025-0201`.
+6. As **Analyst**, open `/payments` and filter Method = Card. Open `PEX-2025-0301` (KRW 3,200,000): approval is rejected; escalate instead. Approve `PEX-2025-0302` (KRW 185,000) to see the standard tier succeed.
+7. Switch to **Approver**, approve `PEX-2025-0301`, then reject `PEX-2025-0307` with a reason; `/audit` filtered to Payment exceptions shows both with links back to the cases.
+8. Switch to **Admin** and open `/admin` for the role/permission matrix and the reset action.
 
 ## Data and Security Assumptions
 
-- All customers, ID numbers, transactions, and users are synthetic (`src/lib/demo/seed.ts`). No real financial or identity data is included and no production credentials are required.
-- ID numbers and transaction references are masked in the UI but stored in plaintext in SQLite; there is no encryption at rest or field-level access logging.
+- All customers, ID numbers, transactions, payments and users are synthetic (`src/lib/demo/seed.ts`). No real financial or identity data; no production credentials.
+- Sensitive fields are masked in the UI but stored in plaintext in SQLite; no encryption at rest or field-level access logging.
 - Demo identity is an unsigned cookie, so anyone with access to the app can switch roles. This is not a production security architecture.
 
 ## Microsoft Integration Path
 
-The prototype uses demo identities so the workflow, authorization, and audit behaviour could be evaluated without a tenant, app registration, or SSO setup. Real Microsoft Entra ID integration is not implemented; this was a scope decision, not an omission.
-
-The intended production path, documented in `src/lib/auth/entra-provider.ts`:
+Demo identities let the workflow, authorization and audit behaviour be evaluated without a tenant or SSO setup. Real Microsoft Entra ID integration is not implemented — a scope decision, not an omission. The intended path, documented in `src/lib/auth/entra-provider.ts`:
 
 ```
 Microsoft Entra ID (OIDC sign-in)
-  -> Microsoft Graph group membership (groups claim, or /me/memberOf on overage)
-  -> application role mapping (group object id -> OPS_ANALYST | COMPLIANCE_APPROVER | ADMIN)
+  -> Microsoft Graph group membership
+  -> application role mapping (group id -> OPS_ANALYST | COMPLIANCE_APPROVER | ADMIN)
   -> existing authorization layer (unchanged)
 ```
 
-`EntraAuthProvider` would implement the same `AuthProvider` interface and return the same `AuthUser` shape, so modules, workflow, and audit code would not change. Today the stub is selected with `DEMO_MODE=false` but throws, and the `AZURE_AD_*` placeholders in `.env.example` are not read by any code.
+`EntraAuthProvider` would implement the same `AuthProvider` interface and return the same `AuthUser` shape, so module, workflow and audit code would not change. Today the stub throws when selected with `DEMO_MODE=false`, and the `AZURE_AD_*` placeholders in `.env.example` are not read.
 
 ## What This PoC Demonstrates
 
-- Two internal review workflows implemented on one codebase within a short, fixed time budget.
-- A second module built from a policy, a server action, queries, and page declarations, reusing authorization, workflow, audit, and UI from the first.
-- Custom business rules (risk- and value-tier approval, mandatory reasons, status transitions) encoded in ordinary TypeScript.
-- Server-side authorization and transactional audit logging, verifiable through `npm run smoke`.
-- Code ownership through a conventional stack (Next.js, TypeScript, Prisma) with no runtime dependency on the tooling used to build it.
+- Three review workflows on one codebase, the third added in a timed, documented experiment (`THIRD_WORKFLOW_EXPERIMENT.md`).
+- Modules expressed as a policy, a server action, queries and pages against shared authorization, workflow, audit, UI and localization code.
+- Custom business rules (risk- and value-tier approval, mandatory reasons, status transitions) in ordinary TypeScript.
+- Server-side authorization and transactional audit logging, verifiable by the smoke scripts and recorded browser runs.
+- Code ownership through a conventional stack with no runtime dependency on the tooling used to build it.
 
 ## What This PoC Does Not Demonstrate
 
-- Production readiness.
-- Regulatory compliance.
-- Lower total cost of ownership than Power Apps.
-- Enterprise-scale identity and access management.
-- Operational resilience, monitoring, or incident handling.
-- Integration with real financial or core banking systems.
-- Migration feasibility for an existing Power Apps estate.
+Production readiness; regulatory compliance; lower total cost of ownership than Power Apps; enterprise-scale identity and access management; operational resilience or monitoring; integration with real financial systems; migration feasibility for an existing Power Apps estate; that the measured third-workflow time generalizes to other workflows.
 
 ## Production Considerations
 
-In priority order:
-
-1. Microsoft Entra ID sign-in and group-based role mapping.
-2. Managed database with migrations and backups in place of the local SQLite file.
-3. Secrets management.
-4. Stronger authorization controls, including a four-eyes rule so the same user cannot escalate and approve a case.
-5. Structured logging, monitoring, and a build/deployment pipeline with tests beyond the smoke script.
-6. Security and compliance review, including audit log integrity and retention.
-7. Integration with real internal APIs and data sources.
+In priority order: Microsoft Entra ID sign-in with group-based role mapping; a managed database with migrations and backups; secrets management; stronger authorization controls including a four-eyes rule; structured logging, monitoring and a build/deployment pipeline with tests beyond the smoke scripts; security and compliance review including audit-log integrity and retention; integration with real internal APIs.
