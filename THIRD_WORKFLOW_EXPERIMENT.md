@@ -6,9 +6,9 @@ Measure the effort required to add a third internal workflow, Payment Exception 
 
 ## Timing
 
-- Start time: [USER TO FILL]
-- End time: [USER TO FILL]
-- Elapsed wall-clock time: [USER TO FILL]
+- Start time: 12:56 PM
+- End time: 1:26 PM
+- Elapsed wall-clock time: 30 minutes
 
 Wall-clock time is measured from submission of the initial Devin implementation prompt to the final validated working state, including implementation, testing, debugging, and follow-up iterations.
 
