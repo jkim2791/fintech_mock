@@ -7,7 +7,7 @@ import { splitDateTime } from "@/lib/format";
 import { getLocale } from "@/lib/i18n";
 import { createTranslator } from "@/lib/i18n/messages";
 
-const ENTITY_PATHS: Record<string, string> = { KYC_CASE: "/kyc", REFUND: "/refunds" };
+const ENTITY_PATHS: Record<string, string> = { KYC_CASE: "/kyc", REFUND: "/refunds", PAYMENT_EXCEPTION: "/payments" };
 
 export async function AuditTable({ events, showEntity = true }: { events: AuditEvent[]; showEntity?: boolean }) {
   const locale = await getLocale();
