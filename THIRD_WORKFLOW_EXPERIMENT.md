@@ -145,7 +145,7 @@ A recoverable Next.js hydration warning appeared on direct loads of two payment 
 | Baseline | `ad8a82d` | POC_FINDINGS: rejoin sentence split by the previous edit |
 | Implementation | `ab94801` | Add Payment Exception Review as a third CaseModule workflow |
 | Fix (audit link) | `0401302` | Link payment exception audit rows to their detail page |
-| Final experiment commit | see the commit that adds this file | THIRD_WORKFLOW_EXPERIMENT.md |
+| Final experiment commit | `cc763b7` | Add THIRD_WORKFLOW_EXPERIMENT.md: evidence record for Payment Exception Review |
 
 Range: https://github.com/jkim2791/fintech_mock/compare/ad8a82d...main
 
