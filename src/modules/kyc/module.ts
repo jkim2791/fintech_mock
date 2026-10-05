@@ -1,8 +1,15 @@
 import type { KycCase } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import type { CaseModule } from "@/lib/workflow/types";
+import type { CaseAction, CaseModule } from "@/lib/workflow/types";
 
 export const HIGH_RISK_LEVEL = "HIGH";
+
+const AUDIT_SUFFIX: Record<CaseAction, string> = {
+  NOTE: "NOTE_ADDED",
+  ESCALATE: "ESCALATED",
+  APPROVE: "APPROVED",
+  REJECT: "REJECTED",
+};
 
 /**
  * KYC policy: maker-checker on HIGH-risk cases. Approving a HIGH-risk case
@@ -34,5 +41,5 @@ export const kycModule: CaseModule<KycCase> = {
   async updateStatus(tx, id, status) {
     await tx.kycCase.update({ where: { id }, data: { status } });
   },
-  auditAction: (action) => `KYC_CASE_${action === "NOTE" ? "NOTE_ADDED" : action + "D"}`,
+  auditAction: (action) => `KYC_CASE_${AUDIT_SUFFIX[action]}`,
 };

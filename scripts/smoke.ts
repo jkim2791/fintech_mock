@@ -67,8 +67,18 @@ async function main() {
   const noReason = await executeCaseAction(refundModule, { entityId: "REF-2025-0202", action: "REJECT", reason: "", user: approver });
   check("Reason required for reject", !noReason.ok);
 
+  // Successful rejects must record the correctly spelled audit action name
+  const kycReject = await executeCaseAction(kycModule, { entityId: "KYC-2025-0103", action: "REJECT", reason: "Address mismatch not resolved", user: analyst });
+  check("Reject: analyst can reject a pending KYC case", kycReject.ok);
+  const kycRejectAudit = await prisma.auditEvent.findFirst({ where: { entityType: "KYC_CASE", entityId: "KYC-2025-0103" } });
+  check("Reject: audit action is KYC_CASE_REJECTED", kycRejectAudit?.action === "KYC_CASE_REJECTED" && kycRejectAudit.newState === "REJECTED", kycRejectAudit?.action);
+  const refundReject = await executeCaseAction(refundModule, { entityId: "REF-2025-0202", action: "REJECT", reason: "Merchant already refunded directly", user: approver });
+  check("Reject: approver can reject a pending refund", refundReject.ok);
+  const refundRejectAudit = await prisma.auditEvent.findFirst({ where: { entityType: "REFUND", entityId: "REF-2025-0202" } });
+  check("Reject: audit action is REFUND_REJECTED", refundRejectAudit?.action === "REFUND_REJECTED" && refundRejectAudit.newState === "REJECTED", refundRejectAudit?.action);
+
   const auditAfter = await prisma.auditEvent.count();
-  check("Every successful action produced exactly one audit row", auditAfter - auditBefore === 5, `${auditAfter - auditBefore} new rows`);
+  check("Every successful action produced exactly one audit row", auditAfter - auditBefore === 7, `${auditAfter - auditBefore} new rows`);
 
   console.log(failures === 0 ? "\nAll smoke checks passed." : `\n${failures} check(s) failed.`);
   process.exitCode = failures === 0 ? 0 : 1;
