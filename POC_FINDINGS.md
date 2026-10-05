@@ -35,7 +35,7 @@ Case context: a Series C Korean fintech, about 60 engineers, roughly $250K/year 
 | Shared UI / shell | Implemented | Shell, navigation, role switcher, tables, filters, detail layout, action panel, audit table |
 | Persistence | Implemented | Prisma on SQLite with deterministic seed |
 | Localization (EN/KR) | Implemented | Cookie-selected locale, 324 message keys, server and client components |
-| Automated checks | Implemented | `npm run smoke` 16 checks; `npm run smoke:payments` 23 checks; lint and typecheck |
+| Automated checks | Implemented | `npm run smoke` 20 checks; `npm run smoke:payments` 23 checks; lint and typecheck; all passing at `ce3cc5a` |
 | Browser validation | Implemented | Recorded runs for the KYC/Refund demo flow and for the payment workflow; one defect found and fixed in each |
 | Entra ID | Not implemented | Provider stub only; demo cookie identity |
 | External financial integrations | Not implemented | Synthetic data only |
@@ -75,12 +75,13 @@ Payment Exception Review was added to the existing foundation under a single imp
 | Files created | 6 (policy, action, queries, two pages, smoke script) |
 | Files modified | 11, all at shared registration points (permissions, `EntityType`, nav, overview, audit filter and link map, dictionaries, seed, schema, `package.json`) |
 | Shared engine / authz / audit / UI component code changed | None |
-| Existing checks | `npm run smoke` 16/16 passing (no KYC/Refund regression) |
+| Existing checks | `npm run smoke` 16/16 passing at the time of the experiment (no KYC/Refund regression) |
 | New checks | `npm run smoke:payments` 23/23 passing |
 | Lint / typecheck | passing |
 | Browser verification | Recorded run: filters, analyst denial, escalation, standard and high-value approval, rejection, audit rows, Korean rendering, KYC/Refund regression |
-| Defects during the experiment | 2, both caught by tests rather than review: a wrong audit action name in the new module (caught by the new smoke script; also exposed the same latent `REJECTD` bug in the two existing modules, left unchanged) and a missing audit-link registration (caught in the browser; fixed in `0401302`) |
+| Defects during the experiment | 2, both caught by tests rather than review: a wrong audit action name in the new module (caught by the new smoke script; also exposed the same latent `REJECTD` bug in the two existing modules, left unchanged during the experiment and fixed afterwards in `ce3cc5a`) and a missing audit-link registration (caught in the browser; fixed in `0401302`) |
 | Commits | `ad8a82d` baseline → `ab94801` implementation → `0401302` fix → `cc763b7` record |
+| Post-experiment cleanup (not timed) | `ce3cc5a`: KYC/Refund audit names switched to the explicit map used by the payment module; four Reject-path regression checks added, `npm run smoke` now 20/20 |
 
 What this provides: one measured observation of marginal engineering effort for a review-style workflow similar to the two already present, on synthetic data, without integrations or production hardening. The work concentrated in domain policy, data and presentation, plus registering the entity in a known set of shared places.
 

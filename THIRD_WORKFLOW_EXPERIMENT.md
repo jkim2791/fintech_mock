@@ -36,7 +36,7 @@ Wall-clock time is measured from submission of the initial Devin implementation 
 
 - Model the exception as `CaseModule<PaymentException>` so it inherits server-side authorization, transitions, reason validation, notes and transactional audit without new engine code.
 - Business rule: any reviewer may resolve (Approve), reject or escalate a standard exception; resolving an exception above KRW 1,000,000 requires `payment:approve_high_value`, held by `COMPLIANCE_APPROVER` and `ADMIN`. This mirrors the refund tier rule. The dataset is KRW-only.
-- Build the audit action name from an explicit `Record<CaseAction, string>` map rather than the `action + "D"` concatenation used by the existing modules (see Issues and Iterations).
+- Build the audit action name from an explicit `Record<CaseAction, string>` map rather than the `action + "D"` concatenation used by the existing modules at the time (see Issues and Iterations).
 - Register the new entity at every shared registration point (permissions, `EntityType`, navigation, overview, audit filter, audit link map, dictionaries, seed) instead of adding payment-specific branches elsewhere.
 - Add a separate `scripts/smoke-payments.ts` so the existing `scripts/smoke.ts` stays byte-identical and can demonstrate no regression.
 
@@ -126,7 +126,7 @@ What failed: `P4: PAYMENT_EXCEPTION_REJECTED audit event persisted` in the first
 Detection: the new test asserts the exact audit action string after a successful Reject.
 Cause: the payment module initially copied the existing modules' `action === "NOTE" ? "NOTE_ADDED" : action + "D"` expression, which yields `REJECTD`.
 Change: replaced with an explicit `AUDIT_SUFFIX` map in `src/modules/payments/module.ts`.
-Outcome: 23 PASS. The same expression still exists in `src/modules/kyc/module.ts` and `src/modules/refunds/module.ts`, so a live Reject there records `KYC_CASE_REJECTD` / `REFUND_REJECTD` while seed rows use `_REJECTED`. The existing `smoke.ts` never exercises a successful Reject, which is why it did not catch this. The pre-existing modules were deliberately left unchanged in this experiment and the finding was reported to the user; the one-line fix is pending a decision.
+Outcome: 23 PASS. The same expression still exists in `src/modules/kyc/module.ts` and `src/modules/refunds/module.ts`, so a live Reject there records `KYC_CASE_REJECTD` / `REFUND_REJECTD` while seed rows use `_REJECTED`. The existing `smoke.ts` never exercises a successful Reject, which is why it did not catch this. The pre-existing modules were deliberately left unchanged in this experiment and the finding was reported to the user. Fixed after the experiment in `ce3cc5a` (see Post-Experiment Cleanup).
 
 **2. Payment rows in the global audit log had no case link.**
 What failed: `/audit` and the overview recent-audit panel showed `PAYMENT_EXCEPTION` without the case ID link that KYC and Refund rows have.
@@ -138,6 +138,16 @@ Outcome: links present in server-rendered HTML for every payment audit row; lint
 **3. Hydration-mismatch overlay during browser testing (not an application change).**
 A recoverable Next.js hydration warning appeared on direct loads of two payment detail pages during the browser run. The captured diff shows only `devinid="…"` and `devin-tagname="…"` attributes being removed, which are injected into the DOM by the browser-automation harness, and the server-rendered HTML for the same URL contains no such attributes. The page remained fully usable. No code was changed for this; it is recorded here because it appeared in the run, with the cause attributed to the test instrumentation rather than to the application, based on the diff content.
 
+## Post-Experiment Cleanup (outside the timed experiment)
+
+Commit `ce3cc5a`, made after the experiment closed and not included in its timing or results:
+
+- `src/modules/kyc/module.ts` and `src/modules/refunds/module.ts` now build audit action names from the same explicit `AUDIT_SUFFIX: Record<CaseAction, string>` map as the payment module, so a live Reject records `KYC_CASE_REJECTED` / `REFUND_REJECTED`.
+- `scripts/smoke.ts` gained four Reject-path regression checks (analyst rejects `KYC-2025-0103`, approver rejects `REF-2025-0202`, exact audit action asserted for each); the expected new-audit-row count rose from 5 to 7.
+- Results at `ce3cc5a`: `npm run smoke` 20 PASS, 0 FAIL; `npm run smoke:payments` 23 PASS, 0 FAIL; lint and typecheck exit 0. With the module fix stashed, the two new audit-name checks fail with `KYC_CASE_REJECTD` / `REFUND_REJECTD`, confirming the regression coverage.
+
+The 16/16 result in Validation above is the figure observed during the experiment and is left unchanged.
+
 ## Git Evidence
 
 | Role | Commit | Message |
@@ -146,6 +156,7 @@ A recoverable Next.js hydration warning appeared on direct loads of two payment 
 | Implementation | `ab94801` | Add Payment Exception Review as a third CaseModule workflow |
 | Fix (audit link) | `0401302` | Link payment exception audit rows to their detail page |
 | Final experiment commit | `cc763b7` | Add THIRD_WORKFLOW_EXPERIMENT.md: evidence record for Payment Exception Review |
+| Post-experiment cleanup (not part of the experiment) | `ce3cc5a` | Fix REJECTD audit action names in KYC and Refund modules; add reject regression checks to smoke |
 
 Range: https://github.com/jkim2791/fintech_mock/compare/ad8a82d...main
 
@@ -153,4 +164,4 @@ Range: https://github.com/jkim2791/fintech_mock/compare/ad8a82d...main
 
 The third workflow was added and all checks pass. The authentication/authorization helpers, the workflow engine and action handler, the audit writer, the table, filter, detail and action components, the localization runtime and the application shell were reused without modification. Shared code changed only at registration points — permission list, entity-type union, navigation, overview, audit filter and link map, dictionaries, seed — for a total of 11 modified files, most by one to a few lines; the largest were the dictionaries (+79) and the seed data (+20). Workflow-specific work was the Prisma model, a 54-line policy module, a 19-line query module, a 9-line action adapter, two pages (158 lines together), seed rows and a 93-line smoke script.
 
-Two issues arose and both were caught by testing rather than by review: one in the new test (which also exposed a latent bug in the two existing modules) and one missed registration point found only in the browser. Within this one experiment the marginal engineering effort of a new workflow was concentrated in domain-specific policy, data and presentation, plus registering the entity in a known set of shared places. This is a single observation on a small synthetic workflow; it does not establish how long future workflows will take or what a production build would cost.
+Two issues arose and both were caught by testing rather than by review: one in the new test (which also exposed a latent bug in the two existing modules, fixed after the experiment in `ce3cc5a`) and one missed registration point found only in the browser. Within this one experiment the marginal engineering effort of a new workflow was concentrated in domain-specific policy, data and presentation, plus registering the entity in a known set of shared places. This is a single observation on a small synthetic workflow; it does not establish how long future workflows will take or what a production build would cost.

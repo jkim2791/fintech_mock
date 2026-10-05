@@ -47,7 +47,7 @@ Authorization is enforced server-side, not only through UI visibility: every act
 
 **Localization.** EN / KR toggle in the header; the selection is a cookie applied to server- and client-rendered text (`src/lib/i18n/`, 324 message keys). Identifiers — role and permission names, status codes in audit rows, case IDs — stay in English. Noto Sans KR is bundled so Hangul renders without a Korean system font.
 
-**Testing.** Two engine-level smoke scripts run the workflow rules without a browser and reset the dataset first: `npm run smoke` (16 checks, KYC and Refund) and `npm run smoke:payments` (23 checks, Payment Exception). Both end by asserting that every successful action produced exactly one audit row. Browser runs were recorded for the KYC/Refund demo flow and for the payment workflow.
+**Testing.** Two engine-level smoke scripts run the workflow rules without a browser and reset the dataset first: `npm run smoke` (20 checks, KYC and Refund) and `npm run smoke:payments` (23 checks, Payment Exception). Both end by asserting that every successful action produced exactly one audit row. Browser runs were recorded for the KYC/Refund demo flow and for the payment workflow.
 
 ## Architecture
 
@@ -87,7 +87,7 @@ Other commands:
 
 ```bash
 npm run db:reset         # wipe and reseed prisma/dev.db
-npm run smoke            # 16 KYC/Refund engine checks (resets data first)
+npm run smoke            # 20 KYC/Refund engine checks (resets data first)
 npm run smoke:payments   # 23 Payment Exception engine checks (resets data first)
 npm run lint
 npm run typecheck
@@ -95,18 +95,16 @@ npm run typecheck
 
 ## Validation
 
-Verified from a clean clone at `691a29f` (Node 22.12.0):
+Verified at `ce3cc5a` (Node 22.12.0):
 
 | Check | Result |
 |---|---|
 | `npm install && npm run db:setup` | Seeded 3 users, 14 KYC cases, 11 refunds, 10 payment exceptions |
-| `npm run smoke` | 16 PASS, 0 FAIL |
+| `npm run smoke` | 20 PASS, 0 FAIL |
 | `npm run smoke:payments` | 23 PASS, 0 FAIL |
 | `npm run lint`, `npm run typecheck` | exit 0 |
 | Routes (dev server) | `/`, `/kyc`, `/kyc/KYC-2025-0101`, `/refunds`, `/refunds/REF-2025-0201`, `/payments`, `/payments/PEX-2025-0301`, `/audit`, `/admin` all HTTP 200 |
 | Analyst on `/audit`, `/admin` | Server-side "Access denied" naming the missing permission |
-
-Known defect, deliberately left in place: the KYC and Refund modules build the audit action name as `action + "D"`, so a live Reject is recorded as `KYC_CASE_REJECTD` / `REFUND_REJECTD`. It was found by the payment module's tests (that module uses an explicit name map) and is documented in `THIRD_WORKFLOW_EXPERIMENT.md`.
 
 ## Demo Flow
 
